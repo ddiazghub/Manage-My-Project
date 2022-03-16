@@ -4,6 +4,8 @@
  */
 package projectmanagementsoftware;
 
+import projectmanagementsoftware.linkedlist.LinkedList;
+
 /**
  * Main
  * @author david
@@ -14,7 +16,14 @@ public class ProjectManagementSoftware {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        // TODO code application logic here
-    }
+        LinkedList<Integer> list;
     
+        list = new LinkedList<>();
+        
+        for (int i = 0; i < 10; i++)
+            list.add(i);
+        
+        
+        list.forEachBetween(0, 10, e -> System.out.println(e*e));
+    }
 }

@@ -121,6 +121,7 @@ public class LinkedList<T> {
         
         while (node != null) {
             function.action(node.get());
+            node = node.getNext();
         }
     }
     
@@ -140,7 +141,7 @@ public class LinkedList<T> {
      */
     public void forEachBetween(int start, int end, IForEachFunction<T> function) {
         Boolean startOutOfBounds = start < 0 || start >= this.length;
-        Boolean endOutOfBounds = end < 0 || end >= this.length;
+        Boolean endOutOfBounds = end < 0 || end > this.length;
         
         if (startOutOfBounds || endOutOfBounds)
             throw new IndexOutOfBoundsException();
@@ -159,6 +160,7 @@ public class LinkedList<T> {
                 function.action(node.get());
             
             node = node.getNext();
+            i++;
         }
     }
 }
