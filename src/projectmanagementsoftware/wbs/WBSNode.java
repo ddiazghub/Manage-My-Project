@@ -5,6 +5,7 @@
 package projectmanagementsoftware.wbs;
 
 import java.io.File;
+import java.util.Scanner;
 
 /**
  * Clase abstracta que representa la información de un nodo en una EDT. Estos nodos pueden ser entregables o paquetes de trabajo.
@@ -19,15 +20,25 @@ public abstract class WBSNode {
     /**
      * Archivo asociado al entregable/paquete de trabajo.
      */
-    protected File file;
+    protected String path;
+    
+    /**
+     * Crea un nuevo entregable/paquete de trabajo.
+     * @param filePath
+     */
+    protected WBSNode(String filePath) {
+        this.path = filePath;
+        this.name = null;
+    }
     
     /**
      * Crea un nuevo entregable/paquete de trabajo.
      * @param name Nombre del entregable/paquete de trabajo.
+     * @param filePath
      */
-    protected WBSNode(String name) {
+    protected WBSNode(String name, String filePath) {
         this.name = name;
-        this.file = null;
+        this.path = filePath;
     }
     
     /**
@@ -45,12 +56,9 @@ public abstract class WBSNode {
     public void setName(String name) {
         this.name = name;
     }
-
-    /**
-     * Obtiene el archivo asociado al entregable/paquete de trabajo.
-     * @return 
-     */
-    public File getFile() {
-        return this.file;
+    
+    @Override
+    public String toString() {
+        return this.name;
     }
 }

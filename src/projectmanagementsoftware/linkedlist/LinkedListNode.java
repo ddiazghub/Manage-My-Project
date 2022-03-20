@@ -50,7 +50,7 @@ public class LinkedListNode<T> {
      * Cambia el valor del dato del nodo.
      * @param data El nuevo valor que tendrá el dato.
      */
-    public void setData(T data) {
+    public void set(T data) {
         this.data = data;
     }
 

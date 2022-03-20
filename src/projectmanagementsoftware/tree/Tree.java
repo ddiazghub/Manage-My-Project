@@ -4,6 +4,8 @@
  */
 package projectmanagementsoftware.tree;
 
+import projectmanagementsoftware.linkedlist.IQueue;
+import projectmanagementsoftware.linkedlist.LinkedList;
 import projectmanagementsoftware.linkedlist.LinkedListNode;
 import projectmanagementsoftware.utils.IForEachFunction;
 
@@ -31,6 +33,10 @@ public class Tree<T> {
      */
     public Tree(TreeNode<T> root) {
         this.root = root;
+    }
+
+    public TreeNode<T> getRoot() {
+        return root;
     }
     
     /**
@@ -130,5 +136,44 @@ public class Tree<T> {
         );
         
         function.action(node.get());
+    }
+    
+    // Recorrido del árbol por niveles.
+    public void levelorder(IForEachFunction<T> function) {
+        IQueue<TreeNode<T>> queue = new LinkedList<>();
+        
+        if (!this.isEmpty()) {
+            queue.enqueue(this.root);
+            
+            while (!queue.isEmpty()) {
+                TreeNode<T> node = queue.dequeue();
+                function.action(node.get());
+                
+                node.getChildren().forEach(child -> {
+                    queue.enqueue(child);
+                });
+            }
+        }
+    }
+    
+    public int height() {
+        return height(this.root);
+    }
+    
+    public static <E> int height(TreeNode<E> node) {
+        if (node == null)
+            return -1;
+        
+        final LinkedListNode<Integer> container = new LinkedListNode<>(0);
+        
+        node.getChildren().forEach((child) -> {
+            container.set(Math.max(container.get(), height(child)));
+        });
+        
+        return 1 + container.get();
+    }
+    
+    public Boolean isEmpty() {
+        return this.root == null;
     }
 }

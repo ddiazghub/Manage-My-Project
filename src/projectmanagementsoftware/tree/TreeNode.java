@@ -58,14 +58,18 @@ public class TreeNode<T> {
     }
     
     public int getChildCount() {
-        return this.children.getLength();
+        return this.children.length();
     }
     
     /**
      * Añade un nuevo hijo al nodo.
      * @param data El dato que tendrá el nuevo hijo que se añadirá.
      */
+    public void addChild(TreeNode<T> child) {
+        this.children.add(child);
+    }
+    
     public void addChild(T data) {
-        this.children.add(new TreeNode<>(data));
+        this.addChild(new TreeNode<>(data));
     }
 }

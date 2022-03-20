@@ -27,6 +27,12 @@ public class Deliverable extends WBSNode {
         this.description = description;
     }
 
+    public Deliverable(String name, String filePath, String description) {
+        super(name, filePath);
+        
+        this.path = filePath;
+    }
+    
     /**
      * Obtiene la descripción del entregable.
      * @return Descripción del entregable.

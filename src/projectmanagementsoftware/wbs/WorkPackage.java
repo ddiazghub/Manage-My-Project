@@ -5,6 +5,7 @@
 package projectmanagementsoftware.wbs;
 
 import java.io.File;
+import projectmanagementsoftware.utils.FileHelpers;
 
 /**
  * Paquete de trabajo en un proyecto.
@@ -17,5 +18,9 @@ public class WorkPackage extends WBSNode {
      */
     public WorkPackage(String name) {
         super(name);
+    }
+    
+    public WorkPackage(String name, String filePath) {
+        super(name, filePath);
     }
 }

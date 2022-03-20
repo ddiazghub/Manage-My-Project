@@ -4,8 +4,13 @@
  */
 package projectmanagementsoftware;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Scanner;
 import projectmanagementsoftware.linkedlist.LinkedList;
 import projectmanagementsoftware.schedule.Schedule;
+import projectmanagementsoftware.utils.FileHelpers;
 import projectmanagementsoftware.wbs.WorkBreakdownStructure;
 
 /**
@@ -37,11 +42,14 @@ public class Project {
      * Crea un nuevo proyecto con el nombre suministrado como parámetro.
      * @param name Nombre del proyecto
     */
-    public Project(String name) {
+    private Project(String name, LinkedList<String> team) {
         this.name = name;
         this.team = new LinkedList<>();
-        this.wbs = new WorkBreakdownStructure(this);
         this.schedule = new Schedule();
+    }
+    
+    private void reload() {
+        this.wbs = WorkBreakdownStructure.load(this);
     }
 
     /**
@@ -82,5 +90,68 @@ public class Project {
      */
     public Schedule getSchedule() {
         return schedule;
+    }
+    
+    public static void changeProps(String name, LinkedList<String> team) {
+        try {
+            File projectProps = FileHelpers.get(name + "/project.txt");
+            FileWriter writer = new FileWriter(projectProps);
+            String buffer = "name=" + name + "\n" + "team=" + team.join(",");
+            writer.write(buffer);
+            writer.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    public static Project create(String name, LinkedList<String> team) {
+        File root = FileHelpers.get(name);
+        
+        if (root.exists())
+            return null;
+        
+        root.mkdir();
+            
+        try {
+            FileHelpers.get(name + "/wbs").mkdir();
+            FileHelpers.get(name + "/schedule").mkdir();
+            FileHelpers.get(name + "/EDT.txt");
+            File projectProps = FileHelpers.get(name + "/project.txt");
+            projectProps.createNewFile();
+            changeProps(name, team);
+        } catch(IOException e) {
+            e.printStackTrace();
+        }
+        
+        return new Project(name, team);
+    }
+    
+    public static LinkedList<Project> load() {
+        LinkedList<Project> projects = new LinkedList<>();
+        File file = FileHelpers.get("");
+        
+        try {
+            for (File child : file.listFiles()) {
+                File projectProps = FileHelpers.get(child.getName() + "/project.txt");
+                Scanner reader = new Scanner(projectProps);
+                
+                String name = child.getName();
+                LinkedList<String> team = new LinkedList<>();
+                
+                while (reader.hasNextLine()) {
+                    String[] line = reader.nextLine().split("=");
+                    
+                    if (line[0].equals("team")) {
+                        team = LinkedList.split(line[1], ",");
+                    }
+                }
+                
+                projects.add(new Project(name, team));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        
+        return projects;
     }
 }

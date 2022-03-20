@@ -11,7 +11,7 @@ import projectmanagementsoftware.utils.IForEachFunction;
  * @author david
  * @param <T> El tipo de dato que va a contener cada nodo de la lista
  */
-public class LinkedList<T> {
+public class LinkedList<T> implements IQueue<T> {
     /**
      * Primer nodo de la lista
      */
@@ -38,10 +38,10 @@ public class LinkedList<T> {
     
     /**
      * Agrega un elemento al final de la lista.
-     * @param data El elemento a agregar
+     * @param element El elemento a agregar
      */
-    public void add(T data) {
-        LinkedListNode<T> node = new LinkedListNode<>(data);
+    public void add(T element) {
+        LinkedListNode<T> node = new LinkedListNode<>(element);
         this.length++;
         
         if (this.head == null) {
@@ -53,6 +53,66 @@ public class LinkedList<T> {
         
         this.tail.setNext(node);
         this.tail = this.tail.getNext();
+    }
+    
+    /**
+     * Agrega un elemento a una posición de la lista.
+     * @param element Elemento que se va a añadir.
+     * @param index Posición en la cual se añadirá el elemento.
+     * @throws IndexOutOfBoundsException Si se intenta añadir en una posición por fuera del espacio abarcado por la lista.
+     */
+    public void add(T element, int index) {
+        if (index < 0 || index >= this.length)
+            throw new IndexOutOfBoundsException();
+        
+        if (index == 0) {
+            LinkedListNode<T> node = new LinkedListNode<>(element, this.head);
+            this.head = node;
+            this.length++;
+            
+            return;
+        }
+        
+        LinkedListNode<T> current = this.head;
+        
+        for (int i = 1; i < index; i++) {
+            current = current.getNext();
+        }
+        
+        LinkedListNode<T> node = new LinkedListNode<>(element, current.getNext());
+        current.setNext(node);
+        this.length++;
+    }
+    
+    /**
+     * Elimina un elemento en una posición de la lista.
+     * @param index Posición en la cual se eliminará el elemento.
+     * @return El elemento extraído de la lista.
+     * @throws IndexOutOfBoundsException Si se intenta eliminar en una posición por fuera del espacio abarcado por la lista.
+     */
+    public T remove(int index) {
+        if (index < 0 || index >= this.length)
+            throw new IndexOutOfBoundsException();
+        
+        if (index == 0) {
+            T data = this.head.get();
+            this.head = this.head.getNext();
+            this.length--;
+            
+            return data;
+        }
+        
+        LinkedListNode<T> current = this.head;
+        
+        for (int i = 1; i < index; i++) {
+            current = current.getNext();
+        }
+        
+        T data = current.getNext().get();
+        current.setNext(current.getNext().getNext());
+        this.length--;
+        
+        return data;
     }
     
     /**
@@ -97,10 +157,10 @@ public class LinkedList<T> {
     }
 
     /**
-     * Obtiene la longitud de la lista.
-     * @return Longitud de la lista.
+     * @see projectmanagementsoftware.linkedlist.IQueue#length() 
      */
-    public int getLength() {
+    @Override
+    public int length() {
         return length;
     }
     
@@ -162,5 +222,63 @@ public class LinkedList<T> {
             node = node.getNext();
             i++;
         }
+    }
+
+    /**
+     * @see projectmanagementsoftware.linkedlist.IQueue#enqueue() 
+     */
+    @Override
+    public void enqueue(T element) {
+        this.add(element, 0);
+    }
+
+    /**
+     * @see projectmanagementsoftware.linkedlist.IQueue#dequeue() 
+     */
+    @Override
+    public T dequeue() {
+        return this.remove(this.length - 1);
+    }
+
+    /**
+     * @see projectmanagementsoftware.linkedlist.IQueue#peek() 
+     */
+    @Override
+    public T peek() {
+        return this.tail.get();
+    }
+
+    /**
+     * @see projectmanagementsoftware.linkedlist.IQueue#isEmpty() 
+     */
+    @Override
+    public Boolean isEmpty() {
+        return this.length == 0;
+    }
+    
+    public String join(String joinChar) {
+        if (this.length == 0)
+            return "";
+        
+        if (!this.head.get().getClass().getSimpleName().equals("String"))
+            throw new UnsupportedOperationException();
+        
+        LinkedListNode<String> container = new LinkedListNode<>((String) this.head.get());
+        
+        this.forEachBetween(1, this.length, string -> {
+            container.set(container.get() + joinChar + string);
+        });
+        
+        return container.get();
+    }
+    
+    public static LinkedList<String> split(String string, String separator) {
+        LinkedList<String> list = new LinkedList<>();
+        
+        for (String token : string.split(separator)) {
+            list.add(token);
+        }
+        
+        return list;
     }
 }
