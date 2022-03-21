@@ -46,6 +46,7 @@ public class Project {
         this.name = name;
         this.team = new LinkedList<>();
         this.schedule = new Schedule();
+        this.reload();
     }
     
     private void reload() {
@@ -115,7 +116,7 @@ public class Project {
         try {
             FileHelpers.get(name + "/wbs").mkdir();
             FileHelpers.get(name + "/schedule").mkdir();
-            FileHelpers.get(name + "/EDT.txt");
+            FileHelpers.get(name + "/EDT.txt").createNewFile();
             File projectProps = FileHelpers.get(name + "/project.txt");
             projectProps.createNewFile();
             changeProps(name, team);

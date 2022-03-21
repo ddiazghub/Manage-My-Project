@@ -34,11 +34,11 @@ public abstract class WBSNode {
     /**
      * Crea un nuevo entregable/paquete de trabajo.
      * @param name Nombre del entregable/paquete de trabajo.
-     * @param filePath
+     * @param path
      */
-    protected WBSNode(String name, String filePath) {
+    protected WBSNode(String name, String path) {
         this.name = name;
-        this.path = filePath;
+        this.path = path;
     }
     
     /**
@@ -55,6 +55,14 @@ public abstract class WBSNode {
      */
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getPath() {
+        return path;
+    }
+    
+    public String getProjectName() {
+        return this.path.split("/")[0];
     }
     
     @Override

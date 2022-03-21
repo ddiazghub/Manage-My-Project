@@ -5,6 +5,8 @@
 package projectmanagementsoftware.wbs;
 
 import java.io.File;
+import java.io.IOException;
+import projectmanagementsoftware.linkedlist.LinkedList;
 import projectmanagementsoftware.utils.FileHelpers;
 
 /**
@@ -22,5 +24,15 @@ public class WorkPackage extends WBSNode {
     
     public WorkPackage(String name, String filePath) {
         super(name, filePath);
+    }
+    
+    public static WorkPackage create(String name, String path) {
+        LinkedList<String> filePath = LinkedList.split(path, "/");
+        filePath.add("wbs", 1);
+        
+        File file = FileHelpers.get(filePath.join("/"));
+        file.mkdir();
+        
+        return new WorkPackage(name, path);
     }
 }

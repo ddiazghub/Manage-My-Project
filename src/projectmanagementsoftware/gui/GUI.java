@@ -10,6 +10,10 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import projectmanagementsoftware.linkedlist.LinkedList;
 import projectmanagementsoftware.Project;
+import projectmanagementsoftware.linkedlist.LinkedListNode;
+import projectmanagementsoftware.wbs.Deliverable;
+import projectmanagementsoftware.wbs.WBSNode;
+import projectmanagementsoftware.wbs.WorkPackage;
 
 /**
  *
@@ -29,9 +33,10 @@ public class GUI extends javax.swing.JFrame {
         this.memberListModel = new DefaultListModel<>();
         this.projectMembersList.setModel(this.memberListModel);
         this.mainContentTabPane.removeAll();
-        DefaultMutableTreeNode treeRoot = new DefaultMutableTreeNode("Proyectos");
-        this.treeModel = new DefaultTreeModel(new DefaultMutableTreeNode("Proyectos"));
+        this.treeModel = new DefaultTreeModel(new DefaultMutableTreeNode(new WorkPackage("Proyectos")));
         this.wbsTree.setModel(this.treeModel);
+        this.wbsTree.setRootVisible(false);
+        this.wbsTree.setCellRenderer(new WBSTreeCellRenderer());
         this.updateUI();
     }
 
@@ -44,7 +49,10 @@ public class GUI extends javax.swing.JFrame {
         });
         
         this.treeModel.reload();
-        this.wbsTree.expandRow(0);
+        
+        for (int i = 0; i < this.wbsTree.getRowCount(); i++) {
+            this.wbsTree.expandRow(i);
+        }
     }
     
     public void showCreateProjectDialog() {
@@ -53,6 +61,53 @@ public class GUI extends javax.swing.JFrame {
         this.memberListModel.clear();
         this.newProjectDialog.setLocationRelativeTo(this);
         this.newProjectDialog.setVisible(true);
+    }
+    
+    public void showAddWorkPackageDialog() {
+        WorkPackage parent = (WorkPackage) this.getSelectedWorkPackage();
+        
+        if (parent == null)
+            return;
+        
+        this.workPackageParentField.setText(parent.getPath());
+        this.workPackageNameField.setText("");
+        this.newWorkPackageDialog.setLocationRelativeTo(this);
+        this.newWorkPackageDialog.setVisible(true);
+    }
+    
+    public void showAddDeliverableDialog() {
+        WorkPackage parent = (WorkPackage) this.getSelectedWorkPackage();
+        
+        if (parent == null)
+            return;
+        
+        this.deliverableParentField.setText(parent.getPath());
+        this.deliverableNameField.setText("");
+        this.deliverableDescriptionArea.setText("");
+        this.newDeliverableDialog.setLocationRelativeTo(this);
+        this.newDeliverableDialog.setVisible(true);
+    }
+    
+    public WorkPackage getSelectedWorkPackage() {
+        WBSNode node = this.getSelectedNode();
+        
+        if (node instanceof Deliverable) {
+            showError("El nodo padre debe ser un paquete de trabajo");
+            return null;
+        }
+        
+        return (WorkPackage) node;
+    }
+    
+    public WBSNode getSelectedNode() {
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) this.wbsTree.getLastSelectedPathComponent();
+        
+        if (node == null) {
+            showError("No se ha seleccionado un paquete de trabajo o proyecto");
+            return null;
+        }
+            
+        return (WBSNode) node.getUserObject();
     }
     
     public void showError(String message) {
@@ -78,6 +133,23 @@ public class GUI extends javax.swing.JFrame {
         cancelNewProjectButton = new javax.swing.JButton();
         confirmNewProjectButton = new javax.swing.JButton();
         removeMemberButton = new javax.swing.JButton();
+        newWorkPackageDialog = new javax.swing.JDialog();
+        workPackageParentField = new javax.swing.JTextField();
+        jLabel3 = new javax.swing.JLabel();
+        jLabel4 = new javax.swing.JLabel();
+        workPackageNameField = new javax.swing.JTextField();
+        cancelNewWorkPackageButton = new javax.swing.JButton();
+        confirmNewWorkPackageButton = new javax.swing.JButton();
+        newDeliverableDialog = new javax.swing.JDialog();
+        deliverableParentField = new javax.swing.JTextField();
+        jLabel5 = new javax.swing.JLabel();
+        jLabel6 = new javax.swing.JLabel();
+        deliverableNameField = new javax.swing.JTextField();
+        cancelNewDeliverableButton = new javax.swing.JButton();
+        confirmNewDeliverableButton = new javax.swing.JButton();
+        jScrollPane5 = new javax.swing.JScrollPane();
+        deliverableDescriptionArea = new javax.swing.JTextArea();
+        jLabel8 = new javax.swing.JLabel();
         header = new javax.swing.JPanel();
         newProjectButton = new javax.swing.JButton();
         wbsButton = new javax.swing.JButton();
@@ -155,6 +227,98 @@ public class GUI extends javax.swing.JFrame {
         });
         newProjectDialog.getContentPane().add(removeMemberButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(270, 110, 40, 30));
 
+        newWorkPackageDialog.setTitle("Nuevo Paquete de Trabajo");
+        newWorkPackageDialog.setAlwaysOnTop(true);
+        newWorkPackageDialog.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
+        newWorkPackageDialog.setMaximumSize(new java.awt.Dimension(365, 236));
+        newWorkPackageDialog.setMinimumSize(new java.awt.Dimension(365, 236));
+        newWorkPackageDialog.setModal(true);
+        newWorkPackageDialog.setPreferredSize(new java.awt.Dimension(365, 236));
+        newWorkPackageDialog.setResizable(false);
+        newWorkPackageDialog.getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        workPackageParentField.setEditable(false);
+        workPackageParentField.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                workPackageParentFieldActionPerformed(evt);
+            }
+        });
+        newWorkPackageDialog.getContentPane().add(workPackageParentField, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 110, 260, 30));
+
+        jLabel3.setText("Padre");
+        newWorkPackageDialog.getContentPane().add(jLabel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 90, -1, -1));
+
+        jLabel4.setText("Nombre de paquete de trabajo");
+        newWorkPackageDialog.getContentPane().add(jLabel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 30, -1, -1));
+        newWorkPackageDialog.getContentPane().add(workPackageNameField, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 50, 260, 30));
+
+        cancelNewWorkPackageButton.setText("Cancelar");
+        cancelNewWorkPackageButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cancelNewWorkPackageButtonActionPerformed(evt);
+            }
+        });
+        newWorkPackageDialog.getContentPane().add(cancelNewWorkPackageButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(190, 160, 120, 40));
+
+        confirmNewWorkPackageButton.setText("Confirmar");
+        confirmNewWorkPackageButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                confirmNewWorkPackageButtonActionPerformed(evt);
+            }
+        });
+        newWorkPackageDialog.getContentPane().add(confirmNewWorkPackageButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 160, 120, 40));
+
+        newDeliverableDialog.setTitle("Nuevo Entregable");
+        newDeliverableDialog.setAlwaysOnTop(true);
+        newDeliverableDialog.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
+        newDeliverableDialog.setLocationByPlatform(true);
+        newDeliverableDialog.setMaximumSize(new java.awt.Dimension(365, 414));
+        newDeliverableDialog.setMinimumSize(new java.awt.Dimension(365, 390));
+        newDeliverableDialog.setModal(true);
+        newDeliverableDialog.setPreferredSize(new java.awt.Dimension(365, 414));
+        newDeliverableDialog.setResizable(false);
+        newDeliverableDialog.getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        deliverableParentField.setEditable(false);
+        deliverableParentField.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                deliverableParentFieldActionPerformed(evt);
+            }
+        });
+        newDeliverableDialog.getContentPane().add(deliverableParentField, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 110, 260, 30));
+
+        jLabel5.setText("Descripción");
+        newDeliverableDialog.getContentPane().add(jLabel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 150, -1, -1));
+
+        jLabel6.setText("Nombre del Entregable");
+        newDeliverableDialog.getContentPane().add(jLabel6, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 30, -1, -1));
+        newDeliverableDialog.getContentPane().add(deliverableNameField, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 50, 260, 30));
+
+        cancelNewDeliverableButton.setText("Cancelar");
+        cancelNewDeliverableButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cancelNewDeliverableButtonActionPerformed(evt);
+            }
+        });
+        newDeliverableDialog.getContentPane().add(cancelNewDeliverableButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(190, 320, 120, 40));
+
+        confirmNewDeliverableButton.setText("Confirmar");
+        confirmNewDeliverableButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                confirmNewDeliverableButtonActionPerformed(evt);
+            }
+        });
+        newDeliverableDialog.getContentPane().add(confirmNewDeliverableButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 320, 120, 40));
+
+        deliverableDescriptionArea.setColumns(20);
+        deliverableDescriptionArea.setRows(5);
+        jScrollPane5.setViewportView(deliverableDescriptionArea);
+
+        newDeliverableDialog.getContentPane().add(jScrollPane5, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 170, 260, 130));
+
+        jLabel8.setText("Padre");
+        newDeliverableDialog.getContentPane().add(jLabel8, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 90, -1, -1));
+
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
         header.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
@@ -185,6 +349,11 @@ public class GUI extends javax.swing.JFrame {
 
         addDeliverable.setText("Nuevo Entregable");
         addDeliverable.setToolTipText("");
+        addDeliverable.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                addDeliverableActionPerformed(evt);
+            }
+        });
         header.add(addDeliverable);
 
         getContentPane().add(header, java.awt.BorderLayout.NORTH);
@@ -266,6 +435,20 @@ public class GUI extends javax.swing.JFrame {
 
     private void confirmNewProjectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_confirmNewProjectButtonActionPerformed
         String projectName = this.projectNameField.getText();
+        
+        final LinkedListNode<Boolean> sw = new LinkedListNode<>(false);
+        
+        this.projects.forEach(project -> {
+            if (project.getName().equals(projectName)) {
+                sw.set(true);
+            }
+        });
+        
+        if (sw.get()) {
+            showError("Ya existe un proyecto con ese nombre");
+            return;
+        }
+        
         LinkedList<String> team = new LinkedList<>();
         
         for (Object member : this.memberListModel.toArray()) {
@@ -300,8 +483,59 @@ public class GUI extends javax.swing.JFrame {
     }//GEN-LAST:event_removeMemberButtonActionPerformed
 
     private void addWorkPackageActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addWorkPackageActionPerformed
-        // TODO add your handling code here:
+        this.showAddWorkPackageDialog();
     }//GEN-LAST:event_addWorkPackageActionPerformed
+
+    private void workPackageParentFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_workPackageParentFieldActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_workPackageParentFieldActionPerformed
+
+    private void cancelNewWorkPackageButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cancelNewWorkPackageButtonActionPerformed
+        this.newWorkPackageDialog.setVisible(false);
+    }//GEN-LAST:event_cancelNewWorkPackageButtonActionPerformed
+
+    private void confirmNewWorkPackageButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_confirmNewWorkPackageButtonActionPerformed
+        String name = this.workPackageNameField.getText();
+        String parentPath = this.workPackageParentField.getText();
+        String projectName = parentPath.split("/")[0];
+
+        projects.forEach(project -> {
+            if (project.getName().equals(projectName)) {
+                project.getWbs().add(WorkPackage.create(name, parentPath + "/" + name));
+            }
+        });
+
+        this.newWorkPackageDialog.setVisible(false);
+        this.updateUI();
+    }//GEN-LAST:event_confirmNewWorkPackageButtonActionPerformed
+
+    private void deliverableParentFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deliverableParentFieldActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_deliverableParentFieldActionPerformed
+
+    private void cancelNewDeliverableButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cancelNewDeliverableButtonActionPerformed
+        this.newDeliverableDialog.setVisible(false);
+    }//GEN-LAST:event_cancelNewDeliverableButtonActionPerformed
+
+    private void confirmNewDeliverableButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_confirmNewDeliverableButtonActionPerformed
+        String name = this.deliverableNameField.getText();
+        String description = this.deliverableDescriptionArea.getText();
+        String parentPath = this.deliverableParentField.getText();
+        String projectName = parentPath.split("/")[0];
+
+        projects.forEach(project -> {
+            if (project.getName().equals(projectName)) {
+                project.getWbs().add(Deliverable.create(name, parentPath + "/" + name + ".txt", description));
+            }
+        });
+
+        this.newDeliverableDialog.setVisible(false);
+        this.updateUI();
+    }//GEN-LAST:event_confirmNewDeliverableButtonActionPerformed
+
+    private void addDeliverableActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addDeliverableActionPerformed
+        this.showAddDeliverableDialog();
+    }//GEN-LAST:event_addDeliverableActionPerformed
 
     /**
      * @param args the command line arguments
@@ -343,20 +577,35 @@ public class GUI extends javax.swing.JFrame {
     private javax.swing.JButton addMemberButton;
     private javax.swing.JTextField addMemberField;
     private javax.swing.JButton addWorkPackage;
+    private javax.swing.JButton cancelNewDeliverableButton;
     private javax.swing.JButton cancelNewProjectButton;
+    private javax.swing.JButton cancelNewWorkPackageButton;
+    private javax.swing.JButton confirmNewDeliverableButton;
     private javax.swing.JButton confirmNewProjectButton;
+    private javax.swing.JButton confirmNewWorkPackageButton;
+    private javax.swing.JTextArea deliverableDescriptionArea;
+    private javax.swing.JTextField deliverableNameField;
+    private javax.swing.JTextField deliverableParentField;
     private javax.swing.JPanel fileExplorerPanel;
     private javax.swing.JPanel header;
     private javax.swing.JPanel idkPanel;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel jLabel5;
+    private javax.swing.JLabel jLabel6;
+    private javax.swing.JLabel jLabel8;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
+    private javax.swing.JScrollPane jScrollPane5;
     private javax.swing.JTabbedPane mainContentTabPane;
+    private javax.swing.JDialog newDeliverableDialog;
     private javax.swing.JButton newProjectButton;
     private javax.swing.JDialog newProjectDialog;
+    private javax.swing.JDialog newWorkPackageDialog;
     private javax.swing.JPanel panel1;
     private javax.swing.JPanel panel2;
     private javax.swing.JList<String> projectMembersList;
@@ -366,5 +615,7 @@ public class GUI extends javax.swing.JFrame {
     private javax.swing.JPanel sidebar;
     private javax.swing.JButton wbsButton;
     private javax.swing.JTree wbsTree;
+    private javax.swing.JTextField workPackageNameField;
+    private javax.swing.JTextField workPackageParentField;
     // End of variables declaration//GEN-END:variables
 }

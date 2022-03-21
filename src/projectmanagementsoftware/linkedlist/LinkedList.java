@@ -265,9 +265,11 @@ public class LinkedList<T> implements IQueue<T> {
         
         LinkedListNode<String> container = new LinkedListNode<>((String) this.head.get());
         
-        this.forEachBetween(1, this.length, string -> {
-            container.set(container.get() + joinChar + string);
-        });
+        if (this.length > 1) {
+            this.forEachBetween(1, this.length, string -> {
+                container.set(container.get() + joinChar + string);
+            });
+        }
         
         return container.get();
     }

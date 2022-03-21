@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.Scanner;
 import javax.swing.tree.DefaultMutableTreeNode;
 import projectmanagementsoftware.Project;
+import projectmanagementsoftware.linkedlist.LinkedList;
 import projectmanagementsoftware.tree.Tree;
 import projectmanagementsoftware.tree.TreeNode;
 import projectmanagementsoftware.utils.FileHelpers;
@@ -44,6 +45,27 @@ public class WorkBreakdownStructure extends Tree<WBSNode> {
         return project;
     }
     
+    public void add(WBSNode node) {
+        LinkedList<String> path = LinkedList.split(node.getPath(), "/");
+        path.remove(0);
+        add(this.getRoot(), node, path);
+    }
+    
+    public static void add(TreeNode<WBSNode> current, WBSNode node, LinkedList<String> path) {
+        if (path.length() == 1) {
+            current.addChild(node);
+            
+            return;
+        }
+        
+        current.getChildren().forEach(child -> {
+            if (child.get().getName().equals(path.getHead().get())) {
+                path.remove(0);
+                add(child, node, path);
+            }
+        });
+    }
+    
     public void save() {
         File root = FileHelpers.get(this.project.getName() + "/wbs");
         FileHelpers.clearDirectory(root);
@@ -54,7 +76,7 @@ public class WorkBreakdownStructure extends Tree<WBSNode> {
     }
     
     public DefaultMutableTreeNode toJTree() {
-        DefaultMutableTreeNode root = new DefaultMutableTreeNode(this.project.getName());
+        DefaultMutableTreeNode root = new DefaultMutableTreeNode(this.getRoot().get());
         
         this.getRoot().getChildren().forEach(child -> {
             root.add(toJTree(child));
@@ -64,7 +86,7 @@ public class WorkBreakdownStructure extends Tree<WBSNode> {
     }
     
     private static DefaultMutableTreeNode toJTree(TreeNode<WBSNode> node) {
-        DefaultMutableTreeNode jTreeNode = new DefaultMutableTreeNode(node.get().getName());
+        DefaultMutableTreeNode jTreeNode = new DefaultMutableTreeNode(node.get());
         
         node.getChildren().forEach(child -> {
             jTreeNode.add(toJTree(child));
@@ -113,8 +135,11 @@ public class WorkBreakdownStructure extends Tree<WBSNode> {
     }
     
     private static TreeNode<WBSNode> buildWBS(File file, String path) {
+        LinkedList<String> nodePath = LinkedList.split(path, "/");
+        nodePath.remove(1);
+        
         if (file.isDirectory()) {
-            TreeNode<WBSNode> node = new TreeNode<>(new WorkPackage(file.getName(), path));
+            TreeNode<WBSNode> node = new TreeNode<>(new WorkPackage(file.getName(), nodePath.join("/")));
             
             for (File child : file.listFiles()) {
                 node.addChild(buildWBS(child, path + "/" + child.getName()));
@@ -131,7 +156,7 @@ public class WorkBreakdownStructure extends Tree<WBSNode> {
                 description += reader.nextLine();
             }
             
-            Deliverable deliverable = new Deliverable(file.getName(), path + "/" + file.getName(), description);
+            Deliverable deliverable = new Deliverable(FileHelpers.getBaseName(file.getName()), nodePath.join("/") + "/" + file.getName(), description);
             TreeNode<WBSNode> node = new TreeNode<>(deliverable);
             
             return node;

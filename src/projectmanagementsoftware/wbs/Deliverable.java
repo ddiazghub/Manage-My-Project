@@ -5,6 +5,10 @@
 package projectmanagementsoftware.wbs;
 
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import projectmanagementsoftware.linkedlist.LinkedList;
+import projectmanagementsoftware.utils.FileHelpers;
 
 /**
  * Entregable en un Proyecto.
@@ -47,5 +51,23 @@ public class Deliverable extends WBSNode {
      */
     public void setDescription(String description) {
         this.description = description;
+    }
+    
+    public static Deliverable create(String name, String path, String description) {
+        LinkedList<String> filePath = LinkedList.split(path, "/");
+        filePath.add("wbs", 1);
+        
+        File file = FileHelpers.get(filePath.join("/"));
+        
+        try {
+            file.createNewFile();
+            FileWriter writer = new FileWriter(file);
+            writer.write(description);
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        
+        return new Deliverable(name, path, description);
     }
 }
