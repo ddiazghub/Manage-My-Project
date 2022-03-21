@@ -4,7 +4,7 @@
  */
 package projectmanagementsoftware.linkedlist;
 
-import projectmanagementsoftware.utils.IForEachFunction;
+import projectmanagementsoftware.utils.ISingleParamVoidFunction;
 
 /**
  * Clase que representa una lista enlazada simple.
@@ -176,7 +176,7 @@ public class LinkedList<T> implements IQueue<T> {
      * </pre>
      * @param function La función a ejecutar para cada elemento de la lista.
      */
-    public void forEach(IForEachFunction<T> function) {
+    public void forEach(ISingleParamVoidFunction<T> function) {
         LinkedListNode<T> node = this.head;
         
         while (node != null) {
@@ -199,7 +199,7 @@ public class LinkedList<T> implements IQueue<T> {
      * @param end Límite superior del rango, exclusivo.
      * @param function La función a ejecutar para cada elemento de la lista.
      */
-    public void forEachBetween(int start, int end, IForEachFunction<T> function) {
+    public void forEachBetween(int start, int end, ISingleParamVoidFunction<T> function) {
         Boolean startOutOfBounds = start < 0 || start >= this.length;
         Boolean endOutOfBounds = end < 0 || end > this.length;
         
@@ -282,5 +282,17 @@ public class LinkedList<T> implements IQueue<T> {
         }
         
         return list;
+    }
+    
+    public boolean contains(T element) {
+        LinkedListNode<Boolean> swContainer = new LinkedListNode<>(false);
+        
+        this.forEach(item -> {
+            if (item.equals(element) || item == element) {
+                swContainer.set(true);
+            }
+        });
+        
+        return swContainer.get();
     }
 }

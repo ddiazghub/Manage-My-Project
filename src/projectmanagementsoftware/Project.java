@@ -44,7 +44,7 @@ public class Project {
     */
     private Project(String name, LinkedList<String> team) {
         this.name = name;
-        this.team = new LinkedList<>();
+        this.team = team;
         this.schedule = new Schedule();
         this.reload();
     }

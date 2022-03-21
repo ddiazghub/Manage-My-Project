@@ -33,7 +33,7 @@ public class Deliverable extends WBSNode {
 
     public Deliverable(String name, String filePath, String description) {
         super(name, filePath);
-        
+        this.description = description;
         this.path = filePath;
     }
     

@@ -8,6 +8,7 @@ import java.util.Scanner;
 import javax.swing.tree.DefaultMutableTreeNode;
 import projectmanagementsoftware.Project;
 import projectmanagementsoftware.linkedlist.LinkedList;
+import projectmanagementsoftware.linkedlist.LinkedListNode;
 import projectmanagementsoftware.tree.Tree;
 import projectmanagementsoftware.tree.TreeNode;
 import projectmanagementsoftware.utils.FileHelpers;
@@ -49,6 +50,7 @@ public class WorkBreakdownStructure extends Tree<WBSNode> {
         LinkedList<String> path = LinkedList.split(node.getPath(), "/");
         path.remove(0);
         add(this.getRoot(), node, path);
+        this.writeToFile();
     }
     
     public static void add(TreeNode<WBSNode> current, WBSNode node, LinkedList<String> path) {
@@ -64,6 +66,16 @@ public class WorkBreakdownStructure extends Tree<WBSNode> {
                 add(child, node, path);
             }
         });
+    }
+    
+    public void writeToFile() {
+        File wbsTxt = FileHelpers.get(this.project.getName() + "/EDT.txt");
+        
+        try (FileWriter writer = new FileWriter(wbsTxt)) {
+            writer.write(this.toString());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
     
     public void save() {
@@ -83,6 +95,26 @@ public class WorkBreakdownStructure extends Tree<WBSNode> {
         });
         
         return root;
+    }
+    
+    @Override
+    public String toString() {
+        final LinkedListNode<String> string = new LinkedListNode<>("");
+        
+        this.mapWithLevelCount((node, level) -> {
+            String line = "";
+            
+            for (int i = 0; i < level; i++) {
+                line += "\t";
+            }
+            
+            line += node.getName() + "\n";
+            string.set(string.get() + line);
+            
+            return null;
+        });
+                
+        return string.get();
     }
     
     private static DefaultMutableTreeNode toJTree(TreeNode<WBSNode> node) {
@@ -152,7 +184,7 @@ public class WorkBreakdownStructure extends Tree<WBSNode> {
             Scanner reader = new Scanner(file);
             String description = "";
             
-            while (reader.hasNext()) {
+            while (reader.hasNextLine()) {
                 description += reader.nextLine();
             }
             

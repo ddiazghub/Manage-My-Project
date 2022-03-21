@@ -8,12 +8,12 @@ package projectmanagementsoftware.gui;
  *
  * @author david
  */
-public class WBSAnimationPanel extends javax.swing.JPanel {
+public class SchedulePanel extends javax.swing.JPanel {
 
     /**
      * Creates new form WBSAnimationPanel
      */
-    public WBSAnimationPanel() {
+    public SchedulePanel() {
         initComponents();
     }
 
@@ -37,7 +37,7 @@ public class WBSAnimationPanel extends javax.swing.JPanel {
 
         animationPanel.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
-        jLabel1.setText("Aquí se mostraría el EDT si estuviera implementado");
+        jLabel1.setText("Aquí se mostraría el cronograma si estuviera implementado");
         animationPanel.add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(230, 180, -1, -1));
 
         scrollPane.setViewportView(animationPanel);

@@ -6,6 +6,7 @@ package projectmanagementsoftware.wbs;
 
 import java.io.File;
 import java.util.Scanner;
+import projectmanagementsoftware.linkedlist.LinkedList;
 
 /**
  * Clase abstracta que representa la información de un nodo en una EDT. Estos nodos pueden ser entregables o paquetes de trabajo.
@@ -62,7 +63,7 @@ public abstract class WBSNode {
     }
     
     public String getProjectName() {
-        return this.path.split("/")[0];
+        return LinkedList.split(this.path, "/").get(0);
     }
     
     @Override
