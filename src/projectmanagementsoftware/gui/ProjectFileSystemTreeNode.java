@@ -5,7 +5,6 @@
 package projectmanagementsoftware.gui;
 
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.MouseListener;
 import javax.swing.Icon;
@@ -20,12 +19,12 @@ import projectmanagementsoftware.wbs.WorkPackage;
  */
 public class ProjectFileSystemTreeNode extends javax.swing.JPanel {
     private static final int PADDING = 15;
-    private static final Icon noDropdownIcon = new ImageIcon(ProjectFileSystemTreeNode.class.getResource("/res/icons/empty.png"));
-    private static final Icon dropdownExpandedIcon = new ImageIcon(ProjectFileSystemTreeNode.class.getResource("/res/icons/arrow_down.png"));
-    private static final Icon dropdownNotExpandedIcon = new ImageIcon(ProjectFileSystemTreeNode.class.getResource("/res/icons/arrow_right.png"));
-    private static final Icon fileIcon = new ImageIcon(ProjectFileSystemTreeNode.class.getResource("/res/icons/file.png"));
-    private static final Icon directoryIcon = new ImageIcon(ProjectFileSystemTreeNode.class.getResource("/res/icons/folder.png"));
-    
+    private static final Icon NO_DROPDOWN_ICON = new ImageIcon(ProjectFileSystemTreeNode.class.getResource("/res/icons/empty.png"));
+    private static final Icon DROPDOWN_EXPANDED_ICON = new ImageIcon(ProjectFileSystemTreeNode.class.getResource("/res/icons/arrow_down.png"));
+    private static final Icon DROPDOWN_NOT_EXPANDED_ICON = new ImageIcon(ProjectFileSystemTreeNode.class.getResource("/res/icons/arrow_right.png"));
+    private static final Icon FILE_ICON = new ImageIcon(ProjectFileSystemTreeNode.class.getResource("/res/icons/file.png"));
+    private static final Icon DIRECTORY_ICON = new ImageIcon(ProjectFileSystemTreeNode.class.getResource("/res/icons/folder.png"));
+    private static final Icon PROJECT_ICON = new ImageIcon(ProjectFileSystemTreeNode.class.getResource("/res/icons/project.png"));
     private int level;
     private WBSNode data;
     private Boolean expanded;
@@ -52,14 +51,21 @@ public class ProjectFileSystemTreeNode extends javax.swing.JPanel {
         this.padding.setMinimumSize(size);
         this.mainLabel.setText(data.getName());
         
+        if (this.data.isProject()) {
+            this.dropdownArrow.setIcon(DROPDOWN_EXPANDED_ICON);
+            this.mainLabel.setIcon(PROJECT_ICON);
+            
+            return;
+        }
+        
         if (this.data instanceof WorkPackage) {
-            this.dropdownArrow.setIcon(dropdownExpandedIcon);
-            this.mainLabel.setIcon(directoryIcon);
+            this.dropdownArrow.setIcon(DROPDOWN_EXPANDED_ICON);
+            this.mainLabel.setIcon(DIRECTORY_ICON);
         }
         
         if (this.data instanceof Deliverable) {
-            this.dropdownArrow.setIcon(noDropdownIcon);
-            this.mainLabel.setIcon(fileIcon);
+            this.dropdownArrow.setIcon(NO_DROPDOWN_ICON);
+            this.mainLabel.setIcon(FILE_ICON);
         }
     }
     
@@ -102,10 +108,10 @@ public class ProjectFileSystemTreeNode extends javax.swing.JPanel {
             return;
         
         if (expanded && !this.expanded)
-            this.dropdownArrow.setIcon(dropdownExpandedIcon);
+            this.dropdownArrow.setIcon(DROPDOWN_EXPANDED_ICON);
         
         if (!expanded && this.expanded)
-            this.dropdownArrow.setIcon(dropdownNotExpandedIcon);
+            this.dropdownArrow.setIcon(DROPDOWN_NOT_EXPANDED_ICON);
         
         this.expanded = expanded;
     }
@@ -169,8 +175,6 @@ public class ProjectFileSystemTreeNode extends javax.swing.JPanel {
         add(dropdownArrow);
 
         mainLabel.setFont(new java.awt.Font("Segoe UI", 0, 10)); // NOI18N
-        mainLabel.setIcon(new javax.swing.ImageIcon(getClass().getResource("/res/icons/folder.png"))); // NOI18N
-        mainLabel.setText("Paquete de Trabajo");
         mainLabel.setMaximumSize(new java.awt.Dimension(1000000, 10000000));
         mainLabel.setMinimumSize(new java.awt.Dimension(0, 0));
         add(mainLabel);

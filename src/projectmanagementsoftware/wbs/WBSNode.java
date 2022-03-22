@@ -70,4 +70,8 @@ public abstract class WBSNode {
     public String toString() {
         return this.name;
     }
+    
+    public boolean isProject() {
+        return LinkedList.split(this.path, "/").length() == 1;
+    }
 }

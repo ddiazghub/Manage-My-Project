@@ -13,11 +13,11 @@ import projectmanagementsoftware.linkedlist.LinkedList;
  * @author david
  */
 public class Validators {
-    private static final char[] ILLEGAL_CHARACTERS = { '/', '\n', '\r', '\t', '\0', '\f', '`', '?', '*', '\\', '<', '>', '|', '\"', ':', '.' };
+    private static final char[] ILLEGAL_CHARACTERS = { '/', '\n', '\r', '\t', '\0', '\f', '`', '?', '*', '\\', '<', '>', '|', '\"', ':', '.', ',' };
     
-    public static boolean isValidFileName(String filename) {
+    public static boolean isValidName(String name) {
         for (char c : ILLEGAL_CHARACTERS) {
-            if (filename.contains("" + c))
+            if (name.contains("" + c))
                 return false;
         }
         
@@ -38,6 +38,13 @@ public class Validators {
             if (filename.equals(name) || filename.equals(name + ".txt"))
                 return false;
         }
+        
+        return true;
+    }
+    
+    public static boolean isDefined(String name) {
+        if (name == null || name.length() == 0)
+            return false;
         
         return true;
     }

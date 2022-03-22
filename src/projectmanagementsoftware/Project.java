@@ -131,6 +131,9 @@ public class Project {
         LinkedList<Project> projects = new LinkedList<>();
         File file = FileHelpers.get("");
         
+        if (!file.exists())
+            file.mkdir();
+        
         try {
             for (File child : file.listFiles()) {
                 File projectProps = FileHelpers.get(child.getName() + "/project.txt");
@@ -142,7 +145,7 @@ public class Project {
                 while (reader.hasNextLine()) {
                     String[] line = reader.nextLine().split("=");
                     
-                    if (line[0].equals("team")) {
+                    if (line.length == 2 && line[0].equals("team")) {
                         team = LinkedList.split(line[1], ",");
                     }
                 }

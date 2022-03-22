@@ -87,16 +87,6 @@ public class WorkBreakdownStructure extends Tree<WBSNode> {
         );
     }
     
-    public DefaultMutableTreeNode toJTree() {
-        DefaultMutableTreeNode root = new DefaultMutableTreeNode(this.getRoot().get());
-        
-        this.getRoot().getChildren().forEach(child -> {
-            root.add(toJTree(child));
-        });
-        
-        return root;
-    }
-    
     @Override
     public String toString() {
         final LinkedListNode<String> string = new LinkedListNode<>("");
@@ -115,16 +105,6 @@ public class WorkBreakdownStructure extends Tree<WBSNode> {
         });
                 
         return string.get();
-    }
-    
-    private static DefaultMutableTreeNode toJTree(TreeNode<WBSNode> node) {
-        DefaultMutableTreeNode jTreeNode = new DefaultMutableTreeNode(node.get());
-        
-        node.getChildren().forEach(child -> {
-            jTreeNode.add(toJTree(child));
-        });
-        
-        return jTreeNode;
     }
     
     private static void save(TreeNode<WBSNode> node, String path) {

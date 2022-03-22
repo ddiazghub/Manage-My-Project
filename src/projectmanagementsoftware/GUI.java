@@ -60,13 +60,15 @@ public class GUI extends javax.swing.JFrame {
             public void mouseClicked(MouseEvent e) {
                 WBSNode node = (WBSNode) e.getSource();
                 
-                if (node instanceof WorkPackage) {
-                    gui.setWorkPackageData(node.getName(), node.getPath());
-                } else if (node instanceof Deliverable) {
+                if (node == null)
+                    return;
+                
+                if (node instanceof Deliverable)
                     gui.setDeliverableData(node.getName(), ((Deliverable) node).getDescription(), node.getPath());
-                } else {
+                else if (node.isProject())
                     gui.setProjectData(node.getName());
-                }
+                else
+                    gui.setWorkPackageData(node.getName(), node.getPath());
             }
         });
         
@@ -111,11 +113,10 @@ public class GUI extends javax.swing.JFrame {
     }
     
     public boolean validateName(String name) {
-        if (Validators.isValidFileName(name))
+        if (Validators.isValidName(name))
             return true;
         
         showError("El nombre contiene caracteres no permitidos");
-        
         return false;
     }
     
@@ -124,7 +125,14 @@ public class GUI extends javax.swing.JFrame {
             return true;
         
         showError("Ya existe un elemento con el mismo nombre");
+        return false;
+    }
+    
+    public boolean validateDefined(String name) {
+        if (Validators.isDefined(name))
+            return true;
         
+        showError("No se ha ingresado un nombre");
         return false;
     }
     
@@ -646,7 +654,7 @@ public class GUI extends javax.swing.JFrame {
     private void confirmNewProjectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_confirmNewProjectButtonActionPerformed
         String projectName = this.projectNameField.getText();
         
-        if (!validateName(projectName) || !validateUnique(projectName, "/"))
+        if (!validateDefined(projectName) || !validateName(projectName) || !validateUnique(projectName, "/"))
             return;
         
         LinkedList<String> team = new LinkedList<>();
@@ -667,10 +675,8 @@ public class GUI extends javax.swing.JFrame {
     private void addMemberButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addMemberButtonActionPerformed
         String newMember = this.addMemberField.getText();
         
-        if (newMember.equals("")) {
-            showError("No se ha ingresado un nombre");
+        if (!validateDefined(newMember) || !validateName(newMember))
             return;
-        }
         
         this.memberListModel.addElement(newMember);
         this.addMemberField.setText("");
@@ -698,7 +704,7 @@ public class GUI extends javax.swing.JFrame {
         String name = this.workPackageNameField.getText();
         String parentPath = this.workPackageParentField.getText();
         
-        if (!validateName(name) || !validateUnique(name, parentPath))
+        if (!validateDefined(name) || !validateName(name) || !validateUnique(name, parentPath))
             return;
         
         String projectName = parentPath.split("/")[0];
@@ -725,7 +731,7 @@ public class GUI extends javax.swing.JFrame {
         String name = this.deliverableNameField.getText();
         String parentPath = this.deliverableParentField.getText();
         
-        if (!validateName(name) || !validateUnique(name, parentPath))
+        if (!validateDefined(name) || !validateName(name) || !validateUnique(name, parentPath))
             return;
         
         String description = this.deliverableDescriptionArea.getText();
@@ -765,6 +771,7 @@ public class GUI extends javax.swing.JFrame {
         
         if (selected == null)
             return;
+        
         String tabname = "Cronograma " + selected.getProjectName();
         
         if (this.tabs.contains(tabname))
