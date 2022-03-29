@@ -9,6 +9,6 @@ package projectmanagementsoftware.utils;
  * @author david
  * @param <T> El Tipo de los elementos sobre los cuales se iterará.
  */
-public interface ISingleParamVoidFunction<T> {
+public interface IVoidFunction1<T> {
     public void action(T element);
 }

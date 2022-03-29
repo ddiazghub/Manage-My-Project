@@ -8,6 +8,6 @@ package projectmanagementsoftware.utils;
  *
  * @author david
  */
-public interface IMapFunction2<T, E> {
+public interface IFunction2<T, E> {
     public E action(T element, int index);
 }

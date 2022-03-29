@@ -7,10 +7,9 @@ package projectmanagementsoftware.tree;
 import projectmanagementsoftware.linkedlist.IQueue;
 import projectmanagementsoftware.linkedlist.LinkedList;
 import projectmanagementsoftware.linkedlist.LinkedListNode;
-import projectmanagementsoftware.utils.IMapFunction;
-import projectmanagementsoftware.utils.IMapFunction2;
-import projectmanagementsoftware.utils.ISingleParamFunction;
-import projectmanagementsoftware.utils.ISingleParamVoidFunction;
+import projectmanagementsoftware.utils.IVoidFunction1;
+import projectmanagementsoftware.utils.IFunction1;
+import projectmanagementsoftware.utils.IFunction2;
 
 /**
  * Arbol N-Ario
@@ -60,11 +59,11 @@ public class Tree<T> {
      * </pre>
      * @param function El procedimiento a realizar para cada nodo.
      */
-    public void preorder(ISingleParamVoidFunction<T> function) {
+    public void preorder(IVoidFunction1<T> function) {
         preorder(this.root, function, node -> false);
     }
     
-    public void preorder(ISingleParamVoidFunction<T> function, ISingleParamFunction<T, Boolean> baseCase) {
+    public void preorder(IVoidFunction1<T> function, IFunction1<T, Boolean> baseCase) {
         preorder(this.root, function, baseCase);
     }
     
@@ -80,7 +79,7 @@ public class Tree<T> {
      * </pre>
      * @param function El procedimiento a realizar para cada nodo.
      */
-    public void inorder(ISingleParamVoidFunction<T> function) {
+    public void inorder(IVoidFunction1<T> function) {
         inorder(this.root, function);
     }
     
@@ -96,7 +95,7 @@ public class Tree<T> {
      * </pre>
      * @param function El procedimiento a realizar para cada nodo.
      */
-    public void postorder(ISingleParamVoidFunction<T> function) {
+    public void postorder(IVoidFunction1<T> function) {
         postorder(this.root, function);
     }
     
@@ -105,7 +104,7 @@ public class Tree<T> {
      * @param node Raíz del subárbol actual.
      * @param function El procedimiento a realizar para cada nodo.
      */
-    public static <E> void preorder(TreeNode<E> node, ISingleParamVoidFunction<E> function, ISingleParamFunction<E, Boolean> baseCase) {
+    public static <E> void preorder(TreeNode<E> node, IVoidFunction1<E> function, IFunction1<E, Boolean> baseCase) {
         if (node == null)
             return;
         
@@ -124,7 +123,7 @@ public class Tree<T> {
      * @param node Raíz del subárbol actual.
      * @param function El procedimiento a realizar para cada nodo.
      */
-    public static <E> void inorder(TreeNode<E> node, ISingleParamVoidFunction<E> function) {
+    public static <E> void inorder(TreeNode<E> node, IVoidFunction1<E> function) {
         if (node == null)
             return;
         
@@ -144,7 +143,7 @@ public class Tree<T> {
      * @param node Raíz del subárbol actual.
      * @param function El procedimiento a realizar para cada nodo.
      */
-    public static <E> void postorder(TreeNode<E> node, ISingleParamVoidFunction<E> function) {
+    public static <E> void postorder(TreeNode<E> node, IVoidFunction1<E> function) {
         if (node == null)
             return;
         
@@ -156,7 +155,7 @@ public class Tree<T> {
     }
     
     // Recorrido del árbol por niveles.
-    public void levelorder(ISingleParamVoidFunction<T> function) {
+    public void levelorder(IVoidFunction1<T> function) {
         IQueue<TreeNode<T>> queue = new LinkedList<>();
         
         if (!this.isEmpty()) {
@@ -194,7 +193,7 @@ public class Tree<T> {
         return this.root == null;
     }
     
-    public <E> Tree<E> map(IMapFunction<T, E> function) {
+    public <E> Tree<E> map(IFunction1<T, E> function) {
         Tree<E> tree = new Tree<>();
         
         if (!this.isEmpty()) {
@@ -210,7 +209,7 @@ public class Tree<T> {
         return tree;
     }
     
-    public <E> Tree<E> mapWithLevelCount(IMapFunction2<T, E> function) {
+    public <E> Tree<E> mapWithLevelCount(IFunction2<T, E> function) {
         Tree<E> tree = new Tree<>();
         
         if (!this.isEmpty()) {
@@ -219,7 +218,6 @@ public class Tree<T> {
             TreeNode<E> mapTreeRoot = new TreeNode<>(transformedElement);
 
             this.root.getChildren().forEach(child -> {
-                
                 map(child, mapTreeRoot, function, 1);
             });
             
@@ -229,7 +227,7 @@ public class Tree<T> {
         return tree;
     }
     
-    private static <K, E> void map(TreeNode<K> current, TreeNode<E> mapTreeParent, IMapFunction<K, E> function) {
+    private static <K, E> void map(TreeNode<K> current, TreeNode<E> mapTreeParent, IFunction1<K, E> function) {
         mapTreeParent.addChild(function.action(current.get()));
         
         current.getChildren().forEach(child -> {
@@ -238,7 +236,7 @@ public class Tree<T> {
         });
     }
     
-    private static <K, E> void map(TreeNode<K> current, TreeNode<E> mapTreeParent, IMapFunction2<K, E> function, int level) {
+    private static <K, E> void map(TreeNode<K> current, TreeNode<E> mapTreeParent, IFunction2<K, E> function, int level) {
         mapTreeParent.addChild(function.action(current.get(), level));
         
         current.getChildren().forEach(child -> {

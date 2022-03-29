@@ -37,5 +37,5 @@ public interface IQueue<T> {
      * Determina si la estructura está vacía.
      * @return Verdadero si el tamaño es 0 y falso si no.
      */
-    public Boolean isEmpty();
+    public boolean isEmpty();
 }

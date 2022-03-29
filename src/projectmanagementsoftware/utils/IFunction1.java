@@ -5,10 +5,9 @@
 package projectmanagementsoftware.utils;
 
 /**
- * Interfaz que representa una función para iterar en una estructura de datos, ya sea una lista o un árbol. Preferiblemente deben usarse Lambdas.
+ *
  * @author david
- * @param <T> El Tipo de los elementos sobre los cuales se iterará.
  */
-public interface ISingleParamFunction<T, E> {
+public interface IFunction1<T, E> {
     public E action(T element);
 }

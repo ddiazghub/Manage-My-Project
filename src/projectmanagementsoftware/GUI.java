@@ -7,6 +7,7 @@ package projectmanagementsoftware;
 import java.awt.CardLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.nio.file.Paths;
 import javax.swing.DefaultListModel;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -18,7 +19,9 @@ import projectmanagementsoftware.gui.ProjectFileSystemTree;
 import projectmanagementsoftware.gui.ProjectFileSystemTreeNode;
 import projectmanagementsoftware.gui.SchedulePanel;
 import projectmanagementsoftware.gui.WBSAnimationPanel;
+import projectmanagementsoftware.gui.WBSDrawableNode;
 import projectmanagementsoftware.linkedlist.LinkedListNode;
+import projectmanagementsoftware.utils.FileHelpers;
 import projectmanagementsoftware.utils.Validators;
 import projectmanagementsoftware.wbs.Deliverable;
 import projectmanagementsoftware.wbs.WBSNode;
@@ -34,6 +37,7 @@ public class GUI extends javax.swing.JFrame {
     private ProjectFileSystemTree tree;
     private CardLayout cards;
     private LinkedList<String> tabs;
+    private LinkedList<WBSAnimationPanel> wbsPanels;
     
     /**
      * Creates new form GUI
@@ -50,6 +54,8 @@ public class GUI extends javax.swing.JFrame {
         this.fileExplorerPanel.add(this.tree);
         this.cards = (CardLayout) this.nodeDataPanel.getLayout();
         this.cards.show(this.nodeDataPanel, "none");
+        this.wbsPanels = new LinkedList<>();
+        this.savePathLabel.setText("Los archivos se guardan en: C:" + Paths.get(FileHelpers.BASEPATH));
         
         if (this.projects.length() > 0)
             this.setProjectData(this.projects.get(0).getName());
@@ -62,6 +68,10 @@ public class GUI extends javax.swing.JFrame {
                 
                 if (node == null)
                     return;
+                
+                wbsPanels.forEach(panel -> {
+                    panel.setSelected(null);
+                });
                 
                 if (node instanceof Deliverable)
                     gui.setDeliverableData(node.getName(), ((Deliverable) node).getDescription(), node.getPath());
@@ -77,6 +87,11 @@ public class GUI extends javax.swing.JFrame {
 
     private void updateUI() {
         this.tree.setProjects(this.projects);
+        
+        this.wbsPanels.forEach(panel -> {
+            panel.revalidateTree();
+            panel.reloadComponent();
+        });
     }
     
     public void showCreateProjectDialog() {
@@ -151,14 +166,26 @@ public class GUI extends javax.swing.JFrame {
     }
     
     public WBSNode getSelectedNode(String errorMsg) {
-        ProjectFileSystemTreeNode node = this.tree.getSelected();
+        ProjectFileSystemTreeNode selected = this.tree.getSelected();
         
-        if (node == null) {
-            showError(errorMsg);
-            return null;
+        if (selected == null) {
+            LinkedListNode<WBSNode> node = new LinkedListNode<>(null);
+            
+            this.wbsPanels.forEach(panel -> {
+                WBSDrawableNode selectedNode = panel.getSelected();
+                
+                if (selectedNode != null) {
+                    node.set(selectedNode.get());
+                }
+            });
+            
+            if (node.get() == null)
+                showError(errorMsg);
+            
+            return node.get();
         }
             
-        return node.get();
+        return selected.get();
     }
     
     public void setDeliverableData(String name, String description, String path) {
@@ -255,6 +282,8 @@ public class GUI extends javax.swing.JFrame {
         scheduleButton = new javax.swing.JButton();
         addWorkPackage = new javax.swing.JButton();
         addDeliverable = new javax.swing.JButton();
+        addDeliverable1 = new javax.swing.JButton();
+        savePathLabel = new javax.swing.JLabel();
         panel1 = new javax.swing.JPanel();
         sidebar = new javax.swing.JPanel();
         fileExplorerPanel = new javax.swing.JPanel();
@@ -481,6 +510,18 @@ public class GUI extends javax.swing.JFrame {
             }
         });
         header.add(addDeliverable);
+
+        addDeliverable1.setText("Reportes");
+        addDeliverable1.setToolTipText("");
+        addDeliverable1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                addDeliverable1ActionPerformed(evt);
+            }
+        });
+        header.add(addDeliverable1);
+
+        savePathLabel.setText("jLabel14");
+        header.add(savePathLabel);
 
         getContentPane().add(header, java.awt.BorderLayout.NORTH);
 
@@ -762,8 +803,32 @@ public class GUI extends javax.swing.JFrame {
         if (this.tabs.contains(tabname))
             return;
         
-        this.mainContentTabPane.addTab(tabname, new WBSAnimationPanel());
+        WBSAnimationPanel tab =  new WBSAnimationPanel(this.getProject(selected.getProjectName()));
+        GUI gui = this;
+        
+        tab.addSecondaryMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                WBSDrawableNode source = (WBSDrawableNode) e.getSource();
+                WBSNode node = source.get();
+                
+                if (node == null)
+                    return;
+                
+                tree.setSelected(null);
+                
+                if (node instanceof Deliverable)
+                    gui.setDeliverableData(node.getName(), ((Deliverable) node).getDescription(), node.getPath());
+                else if (node.isProject())
+                    gui.setProjectData(node.getName());
+                else
+                    gui.setWorkPackageData(node.getName(), node.getPath());
+            }
+        });
+        
+        this.mainContentTabPane.addTab(tabname, tab);
         this.tabs.add(tabname);
+        this.wbsPanels.add(tab);
+        this.updateUI();
     }//GEN-LAST:event_wbsButtonActionPerformed
 
     private void scheduleButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_scheduleButtonActionPerformed
@@ -780,6 +845,10 @@ public class GUI extends javax.swing.JFrame {
         this.mainContentTabPane.addTab(tabname, new SchedulePanel());
         this.tabs.add(tabname);
     }//GEN-LAST:event_scheduleButtonActionPerformed
+
+    private void addDeliverable1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addDeliverable1ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_addDeliverable1ActionPerformed
 
     /**
      * @param args the command line arguments
@@ -818,6 +887,7 @@ public class GUI extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton addDeliverable;
+    private javax.swing.JButton addDeliverable1;
     private javax.swing.JButton addMemberButton;
     private javax.swing.JTextField addMemberField;
     private javax.swing.JButton addWorkPackage;
@@ -876,6 +946,7 @@ public class GUI extends javax.swing.JFrame {
     private javax.swing.JTextField projectNameField;
     private javax.swing.JLabel projectNameLabel;
     private javax.swing.JButton removeMemberButton;
+    private javax.swing.JLabel savePathLabel;
     private javax.swing.JButton scheduleButton;
     private javax.swing.JPanel sidebar;
     private javax.swing.JButton wbsButton;

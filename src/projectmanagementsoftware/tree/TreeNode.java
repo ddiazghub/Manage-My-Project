@@ -39,6 +39,10 @@ public class TreeNode<T> {
         return this.data;
     }
     
+    public void set(T data) {
+        this.data = data;
+    }
+    
     /**
      * Obtiene la lista de hijos del nodo.
      * @return 

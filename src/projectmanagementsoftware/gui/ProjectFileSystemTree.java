@@ -88,11 +88,13 @@ public class ProjectFileSystemTree extends javax.swing.JPanel {
     public ProjectFileSystemTreeNode getSelected() {
         return this.selected;
     }
+    
     public void setSelected(ProjectFileSystemTreeNode selected) {
         if (this.selected != null)
             this.selected.setSelected(false);
         
-        selected.setSelected(true);
+        if (selected != null)
+            selected.setSelected(true);
         
         this.selected = selected;
     }

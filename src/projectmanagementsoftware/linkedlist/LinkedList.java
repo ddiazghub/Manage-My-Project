@@ -4,14 +4,15 @@
  */
 package projectmanagementsoftware.linkedlist;
 
-import projectmanagementsoftware.utils.ISingleParamVoidFunction;
+import projectmanagementsoftware.utils.IFunction1;
+import projectmanagementsoftware.utils.IVoidFunction1;
 
 /**
  * Clase que representa una lista enlazada simple.
  * @author david
  * @param <T> El tipo de dato que va a contener cada nodo de la lista
  */
-public class LinkedList<T> implements IQueue<T> {
+public class LinkedList<T> implements IQueue<T>, IStack<T> {
     /**
      * Primer nodo de la lista
      */
@@ -75,13 +76,29 @@ public class LinkedList<T> implements IQueue<T> {
         
         LinkedListNode<T> current = this.head;
         
-        for (int i = 1; i < index; i++) {
+        for (int i = 0; i < index - 1; i++) {
             current = current.getNext();
         }
         
         LinkedListNode<T> node = new LinkedListNode<>(element, current.getNext());
         current.setNext(node);
+        
+        if (current == this.tail)
+            this.tail = current.getNext();
+        
         this.length++;
+    }
+    
+    public boolean contains(T element) {
+        LinkedListNode<Boolean> swContainer = new LinkedListNode<>(false);
+        
+        this.forEach(item -> {
+            if (item.equals(element) || item == element) {
+                swContainer.set(true);
+            }
+        });
+        
+        return swContainer.get();
     }
     
     /**
@@ -104,15 +121,28 @@ public class LinkedList<T> implements IQueue<T> {
         
         LinkedListNode<T> current = this.head;
         
-        for (int i = 1; i < index; i++) {
+        for (int i = 0; i < index - 1; i++) {
             current = current.getNext();
         }
         
         T data = current.getNext().get();
+        
+        if (current.getNext() == this.tail)
+            this.tail = current;
+        
         current.setNext(current.getNext().getNext());
         this.length--;
         
         return data;
+    }
+    
+    public void remove(T element) {
+        int index = this.indexOf(element);
+        
+        if (index == -1)
+            return;
+        
+        this.remove(index);
     }
     
     /**
@@ -140,6 +170,11 @@ public class LinkedList<T> implements IQueue<T> {
         return node.get();
     }
     
+    public void set(T element, int index) {
+        this.add(element, index);
+        this.remove(index + 1);
+    }
+    
     /**
      * Obtiene el primer nodo de la lista.
      * @return El primer nodo de la lista.
@@ -164,6 +199,23 @@ public class LinkedList<T> implements IQueue<T> {
         return length;
     }
     
+    public int indexOf(T element) {
+        LinkedListNode<Integer> container = new LinkedListNode<>(-1);
+        LinkedListNode<Integer> i = new LinkedListNode<>(0);
+        
+        this.forEach(item -> {
+            if (container.get() != -1)
+                return;
+            
+            if (item == element || item.equals(element))
+                container.set(i.get());
+            
+            i.set(i.get() + 1);
+        });
+        
+        return container.get();
+    }
+    
     /**
      * Ejecuta la función que se pasa como parámetro para cada uno de los elementos en la lista enlazada. Se debe usar de la siguiente manera:
      * <br>
@@ -176,13 +228,29 @@ public class LinkedList<T> implements IQueue<T> {
      * </pre>
      * @param function La función a ejecutar para cada elemento de la lista.
      */
-    public void forEach(ISingleParamVoidFunction<T> function) {
+    public void forEach(IVoidFunction1<T> function) {
         LinkedListNode<T> node = this.head;
         
         while (node != null) {
             function.action(node.get());
             node = node.getNext();
         }
+    }
+    
+    public void swap(int index1, int index2) {
+        T temp = this.get(index1);
+        this.set(this.get(index2), index1);
+        this.set(temp, index2);
+    }
+    
+    public <E> LinkedList<E> map(IFunction1<T, E> function) {
+        LinkedList mappedList = new LinkedList<>();
+        
+        this.forEach(node -> {
+            mappedList.add(function.action(node));
+        });
+        
+        return mappedList;
     }
     
     /**
@@ -199,7 +267,7 @@ public class LinkedList<T> implements IQueue<T> {
      * @param end Límite superior del rango, exclusivo.
      * @param function La función a ejecutar para cada elemento de la lista.
      */
-    public void forEachBetween(int start, int end, ISingleParamVoidFunction<T> function) {
+    public void forEachBetween(int start, int end, IVoidFunction1<T> function) {
         Boolean startOutOfBounds = start < 0 || start >= this.length;
         Boolean endOutOfBounds = end < 0 || end > this.length;
         
@@ -224,12 +292,22 @@ public class LinkedList<T> implements IQueue<T> {
         }
     }
 
+    @Override
+    public String toString() {
+        if (this.length == 0)
+            return "{}";
+        
+        return "{ " + this.join(", ") + " }";
+    }
     /**
      * @see projectmanagementsoftware.linkedlist.IQueue#enqueue() 
      */
     @Override
     public void enqueue(T element) {
-        this.add(element, 0);
+        if (this.isEmpty())
+            this.add(element);
+        else
+            this.add(element, 0);
     }
 
     /**
@@ -252,7 +330,7 @@ public class LinkedList<T> implements IQueue<T> {
      * @see projectmanagementsoftware.linkedlist.IQueue#isEmpty() 
      */
     @Override
-    public Boolean isEmpty() {
+    public boolean isEmpty() {
         return this.length == 0;
     }
     
@@ -260,10 +338,7 @@ public class LinkedList<T> implements IQueue<T> {
         if (this.length == 0)
             return "";
         
-        if (!this.head.get().getClass().getSimpleName().equals("String"))
-            throw new UnsupportedOperationException();
-        
-        LinkedListNode<String> container = new LinkedListNode<>((String) this.head.get());
+        LinkedListNode<String> container = new LinkedListNode<>(this.head.get().toString());
         
         if (this.length > 1) {
             this.forEachBetween(1, this.length, string -> {
@@ -284,15 +359,13 @@ public class LinkedList<T> implements IQueue<T> {
         return list;
     }
     
-    public boolean contains(T element) {
-        LinkedListNode<Boolean> swContainer = new LinkedListNode<>(false);
-        
-        this.forEach(item -> {
-            if (item.equals(element) || item == element) {
-                swContainer.set(true);
-            }
-        });
-        
-        return swContainer.get();
+    @Override
+    public void push(T element) {
+        this.add(element);
+    }
+    
+    @Override
+    public T pop() {
+        return this.remove(this.length - 1);
     }
 }

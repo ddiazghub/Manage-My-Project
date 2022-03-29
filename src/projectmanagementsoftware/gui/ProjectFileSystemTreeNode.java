@@ -77,6 +77,7 @@ public class ProjectFileSystemTreeNode extends javax.swing.JPanel {
         if (this.data instanceof Deliverable)
             this.dropdownArrow.addMouseListener(listener);
     }
+    
     public void addExpandMouseListener(MouseListener listener) {
         this.dropdownArrow.addMouseListener(listener);
     }
@@ -172,11 +173,13 @@ public class ProjectFileSystemTreeNode extends javax.swing.JPanel {
         add(padding);
 
         dropdownArrow.setIcon(new javax.swing.ImageIcon(getClass().getResource("/res/icons/empty.png"))); // NOI18N
+        dropdownArrow.setMaximumSize(new java.awt.Dimension(20, 20));
+        dropdownArrow.setMinimumSize(new java.awt.Dimension(20, 20));
+        dropdownArrow.setPreferredSize(new java.awt.Dimension(20, 20));
         add(dropdownArrow);
 
         mainLabel.setFont(new java.awt.Font("Segoe UI", 0, 10)); // NOI18N
         mainLabel.setMaximumSize(new java.awt.Dimension(1000000, 10000000));
-        mainLabel.setMinimumSize(new java.awt.Dimension(0, 0));
         add(mainLabel);
     }// </editor-fold>//GEN-END:initComponents
 
