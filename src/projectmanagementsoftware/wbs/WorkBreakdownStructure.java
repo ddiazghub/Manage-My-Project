@@ -126,9 +126,9 @@ public class WorkBreakdownStructure extends Tree<WBSNode> {
         if (node.get() instanceof Deliverable) {
             try {
                 file.createNewFile();
-                FileWriter writer = new FileWriter(file);
-                writer.write(((Deliverable) node.get()).getDescription());
-                writer.close();
+                try (FileWriter writer = new FileWriter(file)) {
+                    writer.write(((Deliverable) node.get()).getDescription());
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -138,6 +138,11 @@ public class WorkBreakdownStructure extends Tree<WBSNode> {
     public static WorkBreakdownStructure load(Project project) {
         File root = FileHelpers.get(project.getName() + "/wbs");
         WorkBreakdownStructure wbs = new WorkBreakdownStructure(project);
+        
+        if (!root.exists()) {
+            FileHelpers.clearDirectory(FileHelpers.get(project.getName()));
+            return wbs;
+        }
         
         for (File file : root.listFiles()) {
             wbs.getRoot().addChild(buildWBS(file, project.getName() + "/wbs/" + file.getName()));
@@ -160,15 +165,14 @@ public class WorkBreakdownStructure extends Tree<WBSNode> {
             return node;
         }
         
-        try {
-            Scanner reader = new Scanner(file);
+        try (Scanner reader = new Scanner(file)) {
             String description = "";
             
             while (reader.hasNextLine()) {
                 description += reader.nextLine();
             }
             
-            Deliverable deliverable = new Deliverable(FileHelpers.getBaseName(file.getName()), nodePath.join("/") + "/" + file.getName(), description);
+            Deliverable deliverable = new Deliverable(FileHelpers.getBaseName(file.getName()), nodePath.join("/"), description);
             TreeNode<WBSNode> node = new TreeNode<>(deliverable);
             
             return node;

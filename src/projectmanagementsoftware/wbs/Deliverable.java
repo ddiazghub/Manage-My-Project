@@ -61,9 +61,9 @@ public class Deliverable extends WBSNode {
         
         try {
             file.createNewFile();
-            FileWriter writer = new FileWriter(file);
-            writer.write(description);
-            writer.close();
+            try (FileWriter writer = new FileWriter(file)) {
+                writer.write(description);
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }

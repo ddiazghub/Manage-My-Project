@@ -5,6 +5,7 @@
 package projectmanagementsoftware;
 
 import java.awt.CardLayout;
+import java.awt.Component;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
@@ -81,7 +82,7 @@ public class GUI extends javax.swing.JFrame {
                 });
                 
                 addWbsTab(node);
-                mainContentTabPane.setSelectedIndex(tabs.indexOf("EDT " + node.getProjectName()));
+                focusWbsTab(node);
                 showHeight();
                 
                 if (node instanceof Deliverable)
@@ -165,7 +166,9 @@ public class GUI extends javax.swing.JFrame {
         
         if (selected != null) {
             Project project = getProject(selected.getProjectName());
-            this.heightLabel.setText("Altura: " + Integer.toString(project.getWbs().height()));
+            
+            if (project != null)
+                this.heightLabel.setText("Altura: " + Integer.toString(project.getWbs().height()));
         }
     }
     
@@ -445,13 +448,15 @@ public class GUI extends javax.swing.JFrame {
         deliverableDescriptionArea = new javax.swing.JTextArea();
         jLabel8 = new javax.swing.JLabel();
         header = new javax.swing.JPanel();
-        newProjectButton = new javax.swing.JButton();
-        addWorkPackage = new javax.swing.JButton();
-        addDeliverable = new javax.swing.JButton();
-        wbsButton = new javax.swing.JButton();
-        scheduleButton = new javax.swing.JButton();
-        deleteButton = new javax.swing.JButton();
+        jPanel3 = new javax.swing.JPanel();
         addDeliverable1 = new javax.swing.JButton();
+        deleteButton = new javax.swing.JButton();
+        scheduleButton = new javax.swing.JButton();
+        wbsButton = new javax.swing.JButton();
+        addDeliverable = new javax.swing.JButton();
+        addWorkPackage = new javax.swing.JButton();
+        newProjectButton = new javax.swing.JButton();
+        jPanel2 = new javax.swing.JPanel();
         savePathLabel = new javax.swing.JLabel();
         panel1 = new javax.swing.JPanel();
         sidebar = new javax.swing.JPanel();
@@ -562,7 +567,6 @@ public class GUI extends javax.swing.JFrame {
         newWorkPackageDialog.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
         newWorkPackageDialog.setMinimumSize(new java.awt.Dimension(365, 240));
         newWorkPackageDialog.setModal(true);
-        newWorkPackageDialog.setPreferredSize(new java.awt.Dimension(310, 215));
         newWorkPackageDialog.setResizable(false);
         newWorkPackageDialog.getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
@@ -654,61 +658,9 @@ public class GUI extends javax.swing.JFrame {
 
         header.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
         header.setPreferredSize(new java.awt.Dimension(1280, 80));
-        header.setLayout(new javax.swing.BoxLayout(header, javax.swing.BoxLayout.LINE_AXIS));
+        header.setLayout(new java.awt.GridLayout(1, 0, 10, 0));
 
-        newProjectButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/res/icons/projectBig.png"))); // NOI18N
-        newProjectButton.setToolTipText("Crear Proyecto");
-        newProjectButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                newProjectButtonActionPerformed(evt);
-            }
-        });
-        header.add(newProjectButton);
-
-        addWorkPackage.setIcon(new javax.swing.ImageIcon(getClass().getResource("/res/icons/folderBig.png"))); // NOI18N
-        addWorkPackage.setToolTipText("Nuevo Paquete de trabajo");
-        addWorkPackage.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                addWorkPackageActionPerformed(evt);
-            }
-        });
-        header.add(addWorkPackage);
-
-        addDeliverable.setIcon(new javax.swing.ImageIcon(getClass().getResource("/res/icons/fileBig.png"))); // NOI18N
-        addDeliverable.setToolTipText("Nuevo Entregable");
-        addDeliverable.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                addDeliverableActionPerformed(evt);
-            }
-        });
-        header.add(addDeliverable);
-
-        wbsButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/res/icons/wbs.png"))); // NOI18N
-        wbsButton.setToolTipText("Ver EDT");
-        wbsButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                wbsButtonActionPerformed(evt);
-            }
-        });
-        header.add(wbsButton);
-
-        scheduleButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/res/icons/schedule.png"))); // NOI18N
-        scheduleButton.setToolTipText("Cronograma");
-        scheduleButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                scheduleButtonActionPerformed(evt);
-            }
-        });
-        header.add(scheduleButton);
-
-        deleteButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/res/icons/delete.png"))); // NOI18N
-        deleteButton.setToolTipText("Eliminar Nodo");
-        deleteButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                deleteButtonActionPerformed(evt);
-            }
-        });
-        header.add(deleteButton);
+        jPanel3.setLayout(new javax.swing.BoxLayout(jPanel3, javax.swing.BoxLayout.LINE_AXIS));
 
         addDeliverable1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/res/icons/reports.png"))); // NOI18N
         addDeliverable1.setToolTipText("Reportes");
@@ -717,10 +669,70 @@ public class GUI extends javax.swing.JFrame {
                 addDeliverable1ActionPerformed(evt);
             }
         });
-        header.add(addDeliverable1);
+        jPanel3.add(addDeliverable1);
+
+        deleteButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/res/icons/delete.png"))); // NOI18N
+        deleteButton.setToolTipText("Eliminar Nodo");
+        deleteButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                deleteButtonActionPerformed(evt);
+            }
+        });
+        jPanel3.add(deleteButton);
+
+        scheduleButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/res/icons/schedule.png"))); // NOI18N
+        scheduleButton.setToolTipText("Cronograma");
+        scheduleButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                scheduleButtonActionPerformed(evt);
+            }
+        });
+        jPanel3.add(scheduleButton);
+
+        wbsButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/res/icons/wbs.png"))); // NOI18N
+        wbsButton.setToolTipText("Ver EDT");
+        wbsButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                wbsButtonActionPerformed(evt);
+            }
+        });
+        jPanel3.add(wbsButton);
+
+        addDeliverable.setIcon(new javax.swing.ImageIcon(getClass().getResource("/res/icons/fileBig.png"))); // NOI18N
+        addDeliverable.setToolTipText("Nuevo Entregable");
+        addDeliverable.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                addDeliverableActionPerformed(evt);
+            }
+        });
+        jPanel3.add(addDeliverable);
+
+        addWorkPackage.setIcon(new javax.swing.ImageIcon(getClass().getResource("/res/icons/folderBig.png"))); // NOI18N
+        addWorkPackage.setToolTipText("Nuevo Paquete de trabajo");
+        addWorkPackage.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                addWorkPackageActionPerformed(evt);
+            }
+        });
+        jPanel3.add(addWorkPackage);
+
+        newProjectButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/res/icons/projectBig.png"))); // NOI18N
+        newProjectButton.setToolTipText("Crear Proyecto");
+        newProjectButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                newProjectButtonActionPerformed(evt);
+            }
+        });
+        jPanel3.add(newProjectButton);
+
+        header.add(jPanel3);
+
+        jPanel2.setLayout(new java.awt.BorderLayout());
 
         savePathLabel.setText("jLabel14");
-        header.add(savePathLabel);
+        jPanel2.add(savePathLabel, java.awt.BorderLayout.CENTER);
+
+        header.add(jPanel2);
 
         getContentPane().add(header, java.awt.BorderLayout.NORTH);
 
@@ -1067,7 +1079,30 @@ public class GUI extends javax.swing.JFrame {
             
             file.delete();
             
+            if (filePath.length() == 1) {
+                Project project = getProject(filePath.get(0));
+                
+                this.projects.remove(project);
+                LinkedListNode<WBSAnimationPanel> toRemove = new LinkedListNode<>(null);
+                
+                this.wbsPanels.forEach((p) -> {
+                    if (p.getProject().getName().equals(project.getName())) {
+                        toRemove.set(p);
+                    }
+                });
+                
+                if (toRemove.get() != null)
+                    this.mainContentTabPane.remove(toRemove.get());
+                
+                this.wbsPanels.remove(toRemove.get());
+            }
+            
             this.projects = Project.load();
+            
+            this.wbsPanels.forEach(panel -> {
+                panel.setProject(getProject(panel.getProject().getName()));
+            });
+            
             this.updateUI();
         }
     }//GEN-LAST:event_deleteButtonActionPerformed
@@ -1180,6 +1215,8 @@ public class GUI extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel8;
     private javax.swing.JLabel jLabel9;
     private javax.swing.JPanel jPanel1;
+    private javax.swing.JPanel jPanel2;
+    private javax.swing.JPanel jPanel3;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;

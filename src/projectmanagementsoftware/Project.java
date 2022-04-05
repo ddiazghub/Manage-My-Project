@@ -97,10 +97,10 @@ public class Project {
     public static void changeProps(String name, LinkedList<String> team) {
         try {
             File projectProps = FileHelpers.get(name + "/project.txt");
-            FileWriter writer = new FileWriter(projectProps);
-            String buffer = "name=" + name + "\n" + "team=" + team.join(",");
-            writer.write(buffer);
-            writer.close();
+            try (FileWriter writer = new FileWriter(projectProps)) {
+                String buffer = "name=" + name + "\n" + "team=" + team.join(",");
+                writer.write(buffer);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -138,24 +138,26 @@ public class Project {
         try {
             for (File child : file.listFiles()) {
                 File projectProps = FileHelpers.get(child.getName() + "/project.txt");
-                Scanner reader = new Scanner(projectProps);
                 
-                String name = child.getName();
-                LinkedList<String> team = new LinkedList<>();
-                
-                while (reader.hasNextLine()) {
-                    String[] line = reader.nextLine().split("=");
-                    
-                    if (line.length == 2 && line[0].equals("team")) {
-                        team = LinkedList.split(line[1], ",");
+                try (Scanner reader = new Scanner(projectProps)) {
+                    String name = child.getName();
+                    LinkedList<String> team = new LinkedList<>();
+
+                    while (reader.hasNextLine()) {
+                        String[] line = reader.nextLine().split("=");
+
+                        if (line.length == 2 && line[0].equals("team")) {
+                            team = LinkedList.split(line[1], ",");
+                        }
                     }
+
+                    projects.add(new Project(name, team));
                 }
-                
-                projects.add(new Project(name, team));
             }
         } catch (IOException e) {
             e.printStackTrace();
         } catch (Exception e) {
+            e.printStackTrace();
             JOptionPane.showMessageDialog(null, "Ha ocurrido un error al cargar los proyectos, si esto ocurre cada vez que\nse inicia el programa probablemente se debe a un conflicto deversiones en los archivos.\nElimina la carpeta " + FileHelpers.get("").getAbsolutePath() + " para solucionarlo.", "Error", JOptionPane.ERROR_MESSAGE);
         }
         

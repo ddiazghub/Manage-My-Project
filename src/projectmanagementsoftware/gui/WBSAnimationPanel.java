@@ -159,6 +159,10 @@ public class WBSAnimationPanel extends javax.swing.JPanel {
     public Project getProject() {
         return project;
     }
+
+    public void setProject(Project project) {
+        this.project = project;
+    }
     
     
     
