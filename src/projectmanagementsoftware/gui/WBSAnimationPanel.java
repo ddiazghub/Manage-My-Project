@@ -37,6 +37,7 @@ public class WBSAnimationPanel extends javax.swing.JPanel {
     private Project project;
     private Tree<WBSDrawableNode> tree;
     private WBSDrawableNode selected;
+    private WBSDrawableNode visited;
     private MouseListener secondaryListener;
     
     // Los límites del espacio que abarca el árbol
@@ -153,6 +154,28 @@ public class WBSAnimationPanel extends javax.swing.JPanel {
     
     public int getYInPixels(float y) {
         return 25 + Math.round(y * (NODESIZE.height + NODE_SEPARATION_Y));
+    }
+
+    public Project getProject() {
+        return project;
+    }
+    
+    
+    
+    public Tree<WBSDrawableNode> getTree() {
+        return this.tree;
+    }
+    
+    public void setVisited(WBSDrawableNode visited) {
+        if (this.visited != null) {
+            this.visited.setVisited(false);
+        }
+        
+        this.visited = visited;
+        
+        if (this.visited != null) {
+            this.visited.setVisited(true);
+        }
     }
     
     // Visita un nuevo nodo y lo pinta de color verde;

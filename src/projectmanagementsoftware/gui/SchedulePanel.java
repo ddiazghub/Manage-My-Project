@@ -4,19 +4,29 @@
  */
 package projectmanagementsoftware.gui;
 
+import projectmanagementsoftware.Project;
+
 /**
  *
  * @author david
  */
 public class SchedulePanel extends javax.swing.JPanel {
-
+    private Project project;
+    
     /**
      * Creates new form WBSAnimationPanel
      */
-    public SchedulePanel() {
+    public SchedulePanel(Project project) {
         initComponents();
+        
+        this.project = project;
     }
 
+    public Project getProject() {
+        return project;
+    }
+
+    
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -37,8 +47,9 @@ public class SchedulePanel extends javax.swing.JPanel {
 
         animationPanel.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
+        jLabel1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/res/icons/fish.png"))); // NOI18N
         jLabel1.setText("Aquí se mostraría el cronograma si estuviera implementado");
-        animationPanel.add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(230, 180, -1, -1));
+        animationPanel.add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(100, -100, 880, 750));
 
         scrollPane.setViewportView(animationPanel);
 

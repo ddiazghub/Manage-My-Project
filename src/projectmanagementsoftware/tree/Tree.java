@@ -4,12 +4,14 @@
  */
 package projectmanagementsoftware.tree;
 
+import projectmanagementsoftware.gui.WBSDrawableNode;
 import projectmanagementsoftware.linkedlist.IQueue;
 import projectmanagementsoftware.linkedlist.LinkedList;
 import projectmanagementsoftware.linkedlist.LinkedListNode;
 import projectmanagementsoftware.utils.IVoidFunction1;
 import projectmanagementsoftware.utils.IFunction1;
 import projectmanagementsoftware.utils.IFunction2;
+import projectmanagementsoftware.wbs.Deliverable;
 
 /**
  * Arbol N-Ario
@@ -17,6 +19,13 @@ import projectmanagementsoftware.utils.IFunction2;
  * @param <T> El tipo de datos que van a estar almacenados en el árbol.
  */
 public class Tree<T> {
+    public static final int PREORDER = 0;
+    public static final int INORDER = 1;
+    public static final int POSTORDER = 2;
+    public static final int LEAVES = 3;
+    public static final int SINGLE_CHILD = 4;
+    
+    
     /**
      * Raíz del árbol.
      */
@@ -45,7 +54,29 @@ public class Tree<T> {
         this.root = root;
     }
     
-    
+    public void traverse(int algorithm, IVoidFunction1<T> function) {
+        switch (algorithm) {
+            case PREORDER:
+                preorder(function);
+                break;
+            
+            case INORDER:
+                inorder(function);
+                break;
+                
+            case POSTORDER:
+                postorder(function);
+                break;
+            
+            case LEAVES:
+                leaves(function);
+                break;
+                
+            case SINGLE_CHILD:
+                singleChildNodes(function);
+                break;
+        }
+    }
     
     /**
      * Recorre el árbol en preorden y ejecuta la función suministrada como parámetro para cada elemento durante el recorrido.
@@ -99,6 +130,14 @@ public class Tree<T> {
         postorder(this.root, function);
     }
     
+    public void leaves(IVoidFunction1<T> function) {
+        leaves(this.root, function);
+    }
+    
+    public void singleChildNodes(IVoidFunction1<T> function) {
+        singleChildNodes(this.root, function);
+    }
+    
     /**
      * Recorre el un subárbol cuya raíz es el nodo pasado como parámetro en preorden y ejecuta la función suministrada como parámetro para cada elemento durante el recorrido.
      * @param node Raíz del subárbol actual.
@@ -127,15 +166,19 @@ public class Tree<T> {
         if (node == null)
             return;
         
-        node.getChildren().forEachBetween(0, node.getChildCount() / 2, 
-            child -> inorder(child, function)
-        );
+        if (node.getChildCount() > 0) {
+            node.getChildren().forEachBetween(0, node.getChildCount() / 2, 
+                child -> inorder(child, function));
+        }
         
         function.action(node.get());
         
-        node.getChildren().forEachBetween(node.getChildCount() / 2, node.getChildCount(), 
-            child -> inorder(child, function)
-        );
+        if (node.getChildCount() > 0) {
+            node.getChildren().forEachBetween(node.getChildCount() / 2, node.getChildCount(), 
+                child -> inorder(child, function)
+            );
+        }
+        
     }
     
     /**
@@ -152,6 +195,40 @@ public class Tree<T> {
         );
         
         function.action(node.get());
+    }
+    
+    public static <E> void leaves(TreeNode<E> node, IVoidFunction1<E> function) {
+        if (node == null)
+            return;
+        
+        if (node.getChildCount() == 0)
+            function.action(node.get());
+        
+        node.getChildren().forEach(
+            child -> leaves(child, function)
+        );
+    }
+    
+    public static <E> void singleChildNodes(TreeNode<E> node, IVoidFunction1<E> function) {
+        if (node == null)
+            return;
+        
+        LinkedListNode<Integer> count = new LinkedListNode<>(0);
+        
+        node.getChildren().forEach(child -> {
+            if (child.get() instanceof WBSDrawableNode) {
+                if (((WBSDrawableNode) child.get()).get() instanceof Deliverable) {
+                    count.set(count.get() + 1);
+                }
+            }
+        });
+        
+        if (count.get() == 1)
+            function.action(node.get());
+        
+        node.getChildren().forEach(
+            child -> singleChildNodes(child, function)
+        );
     }
     
     // Recorrido del árbol por niveles.
@@ -177,10 +254,7 @@ public class Tree<T> {
     }
     
     public static <E> int height(TreeNode<E> node) {
-        if (node == null)
-            return -1;
-        
-        final LinkedListNode<Integer> container = new LinkedListNode<>(0);
+        final LinkedListNode<Integer> container = new LinkedListNode<>(-1);
         
         node.getChildren().forEach((child) -> {
             container.set(Math.max(container.get(), height(child)));

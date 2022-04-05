@@ -6,6 +6,7 @@ package projectmanagementsoftware.gui;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Graphics;
 import java.awt.event.MouseListener;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;

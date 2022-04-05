@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Scanner;
+import javax.swing.JOptionPane;
 import projectmanagementsoftware.linkedlist.LinkedList;
 import projectmanagementsoftware.schedule.Schedule;
 import projectmanagementsoftware.utils.FileHelpers;
@@ -154,6 +155,8 @@ public class Project {
             }
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Ha ocurrido un error al cargar los proyectos, si esto ocurre cada vez que\nse inicia el programa probablemente se debe a un conflicto deversiones en los archivos.\nElimina la carpeta " + FileHelpers.get("").getAbsolutePath() + " para solucionarlo.", "Error", JOptionPane.ERROR_MESSAGE);
         }
         
         return projects;

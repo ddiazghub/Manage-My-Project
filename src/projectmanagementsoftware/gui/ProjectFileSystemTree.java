@@ -63,9 +63,10 @@ public class ProjectFileSystemTree extends javax.swing.JPanel {
                     else
                         node = (ProjectFileSystemTreeNode) ((Component) source).getParent();
                     
-                    treeComponent.setSelected(node);
                     e.setSource(node.get());
                     treeComponent.secondaryListener.mouseClicked(e);
+                    
+                    treeComponent.setSelected(node);
                 }
             });
             
@@ -90,13 +91,17 @@ public class ProjectFileSystemTree extends javax.swing.JPanel {
     }
     
     public void setSelected(ProjectFileSystemTreeNode selected) {
+        if (selected != null)
+            System.out.println(selected.getBackground());
+        
         if (this.selected != null)
             this.selected.setSelected(false);
         
-        if (selected != null)
-            selected.setSelected(true);
-        
         this.selected = selected;
+        
+        if (selected != null) {
+            selected.setSelected(true);
+        }
     }
     
     public void reloadComponent() {

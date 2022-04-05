@@ -7,10 +7,14 @@ package projectmanagementsoftware;
 import java.awt.CardLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.File;
 import java.nio.file.Paths;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.DefaultListModel;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
+import javax.swing.UIManager;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import projectmanagementsoftware.linkedlist.LinkedList;
@@ -38,13 +42,14 @@ public class GUI extends javax.swing.JFrame {
     private CardLayout cards;
     private LinkedList<String> tabs;
     private LinkedList<WBSAnimationPanel> wbsPanels;
+    private Thread activeTraversalThread;
+    private LinkedList<SchedulePanel> schedules;
     
     /**
      * Creates new form GUI
      */
     public GUI() {
         initComponents();
-        
         this.tabs = new LinkedList<>();
         this.projects = Project.load();
         this.memberListModel = new DefaultListModel<>();
@@ -55,7 +60,9 @@ public class GUI extends javax.swing.JFrame {
         this.cards = (CardLayout) this.nodeDataPanel.getLayout();
         this.cards.show(this.nodeDataPanel, "none");
         this.wbsPanels = new LinkedList<>();
+        this.schedules = new LinkedList<>();
         this.savePathLabel.setText("Los archivos se guardan en: C:" + Paths.get(FileHelpers.BASEPATH));
+        this.activeTraversalThread = null;
         
         if (this.projects.length() > 0)
             this.setProjectData(this.projects.get(0).getName());
@@ -73,6 +80,10 @@ public class GUI extends javax.swing.JFrame {
                     panel.setSelected(null);
                 });
                 
+                addWbsTab(node);
+                mainContentTabPane.setSelectedIndex(tabs.indexOf("EDT " + node.getProjectName()));
+                showHeight();
+                
                 if (node instanceof Deliverable)
                     gui.setDeliverableData(node.getName(), ((Deliverable) node).getDescription(), node.getPath());
                 else if (node.isProject())
@@ -85,6 +96,7 @@ public class GUI extends javax.swing.JFrame {
         this.updateUI();
     }
 
+    
     private void updateUI() {
         this.tree.setProjects(this.projects);
         
@@ -92,6 +104,142 @@ public class GUI extends javax.swing.JFrame {
             panel.revalidateTree();
             panel.reloadComponent();
         });
+        
+        showHeight();
+    }
+    
+    private void focusWbsTab(WBSNode node) {
+        LinkedListNode<WBSAnimationPanel> wbsPanel = new LinkedListNode<>(null);
+        
+        this.wbsPanels.forEach(panel -> {
+            if (panel.getProject().getName().equals(node.getProjectName()))
+                wbsPanel.set(panel);
+        });
+        
+        if (wbsPanel.get() == null)
+            return;
+        
+        this.mainContentTabPane.setSelectedComponent(wbsPanel.get());
+    }
+    
+    private void resetTraversal(int algorithm, WBSAnimationPanel wbs) {
+        Thread newTraversal = new Thread() {
+            public void run() {
+                reportsConsole.setText("");
+                wbs.setVisited(null);
+                
+                try {
+                    wbs.getTree().traverse(algorithm, node -> {
+                        if (this.isInterrupted())
+                            throw new IndexOutOfBoundsException();
+                        
+                        reportsConsole.setText(reportsConsole.getText() + node.get().getPath() + "\n");
+                        wbs.setVisited(node);
+                        
+                        try {
+                            Thread.sleep(800);
+                        } catch (InterruptedException ex) {
+                            throw new IndexOutOfBoundsException();
+                        }
+                        
+                        wbs.setVisited(null);
+                    });
+                    
+                    wbs.setVisited(null);
+                } catch (Exception e) {
+                    return;
+                }
+            }
+        };
+        
+        if (this.activeTraversalThread != null) {
+            this.activeTraversalThread.interrupt();
+        }
+        
+        this.activeTraversalThread = newTraversal;
+        newTraversal.start();
+    }
+    
+    private void showHeight() {
+        WBSNode selected = this.getSelectedNode();
+        
+        if (selected != null) {
+            Project project = getProject(selected.getProjectName());
+            this.heightLabel.setText("Altura: " + Integer.toString(project.getWbs().height()));
+        }
+    }
+    
+    private void addWbsTab(WBSNode node) {
+        String tabname = "EDT " + node.getProjectName();
+        
+        if (this.tabs.contains(tabname)) {
+            this.focusWbsTab(node);
+            return;
+        }
+        
+        WBSAnimationPanel tab =  new WBSAnimationPanel(this.getProject(node.getProjectName()));
+        GUI gui = this;
+        ProjectFileSystemTree treeComponent = this.tree;
+        
+        tab.addSecondaryMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                WBSDrawableNode source = (WBSDrawableNode) e.getSource();
+                WBSNode node = source.get();
+                
+                if (node == null)
+                    return;
+                
+                treeComponent.setSelected(null);
+                showHeight();
+                
+                wbsPanels.forEach(panel -> {
+                    if (panel != tab)
+                        panel.setSelected(null);
+                });
+                
+                if (node instanceof Deliverable)
+                    gui.setDeliverableData(node.getName(), ((Deliverable) node).getDescription(), node.getPath());
+                else if (node.isProject())
+                    gui.setProjectData(node.getName());
+                else
+                    gui.setWorkPackageData(node.getName(), node.getPath());
+            }
+        });
+        
+        this.mainContentTabPane.addTab(tabname, tab);
+        this.tabs.add(tabname);
+        this.wbsPanels.add(tab);
+        this.mainContentTabPane.setSelectedIndex(this.mainContentTabPane.getSelectedIndex() - 1);
+        this.updateUI();
+    }
+    
+    public void focusScheduleTab(WBSNode node) {
+        LinkedListNode<SchedulePanel> s = new LinkedListNode<>(null);
+        
+        this.schedules.forEach(schedule -> {
+            if (schedule.getProject().getName().equals(node.getProjectName()))
+                s.set(schedule);
+        });
+        
+        if (s.get() == null)
+            return;
+        
+        this.mainContentTabPane.setSelectedComponent(s.get());
+    }
+    
+    public void addScheduleTab(WBSNode node) {
+        String tabname = "Cronograma " + node.getProjectName();
+        
+        if (this.tabs.contains(tabname)) {
+            this.focusScheduleTab(node);
+            return;
+        }
+        
+        SchedulePanel schedule = new SchedulePanel(getProject(node.getProjectName()));
+        this.schedules.add(schedule);
+        this.mainContentTabPane.addTab(tabname, schedule);
+        this.tabs.add(tabname);
+        this.mainContentTabPane.setSelectedIndex(this.mainContentTabPane.getComponentCount() - 1);
     }
     
     public void showCreateProjectDialog() {
@@ -181,6 +329,26 @@ public class GUI extends javax.swing.JFrame {
             
             if (node.get() == null)
                 showError(errorMsg);
+            
+            return node.get();
+        }
+            
+        return selected.get();
+    }
+    
+    public WBSNode getSelectedNode() {
+        ProjectFileSystemTreeNode selected = this.tree.getSelected();
+        
+        if (selected == null) {
+            LinkedListNode<WBSNode> node = new LinkedListNode<>(null);
+            
+            this.wbsPanels.forEach(panel -> {
+                WBSDrawableNode selectedNode = panel.getSelected();
+                
+                if (selectedNode != null) {
+                    node.set(selectedNode.get());
+                }
+            });
             
             return node.get();
         }
@@ -278,10 +446,11 @@ public class GUI extends javax.swing.JFrame {
         jLabel8 = new javax.swing.JLabel();
         header = new javax.swing.JPanel();
         newProjectButton = new javax.swing.JButton();
-        wbsButton = new javax.swing.JButton();
-        scheduleButton = new javax.swing.JButton();
         addWorkPackage = new javax.swing.JButton();
         addDeliverable = new javax.swing.JButton();
+        wbsButton = new javax.swing.JButton();
+        scheduleButton = new javax.swing.JButton();
+        deleteButton = new javax.swing.JButton();
         addDeliverable1 = new javax.swing.JButton();
         savePathLabel = new javax.swing.JLabel();
         panel1 = new javax.swing.JPanel();
@@ -290,6 +459,13 @@ public class GUI extends javax.swing.JFrame {
         jPanel1 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         nodeDataPanel = new javax.swing.JPanel();
+        reportsPanel = new javax.swing.JPanel();
+        jScrollPane9 = new javax.swing.JScrollPane();
+        reportsConsole = new javax.swing.JTextArea();
+        confirmShowReport = new javax.swing.JButton();
+        chooseReport = new javax.swing.JComboBox<>();
+        heightLabel = new javax.swing.JLabel();
+        jLabel19 = new javax.swing.JLabel();
         noProjectPanel = new javax.swing.JPanel();
         deliverableCard = new javax.swing.JPanel();
         jLabel7 = new javax.swing.JLabel();
@@ -353,7 +529,9 @@ public class GUI extends javax.swing.JFrame {
         });
         newProjectDialog.getContentPane().add(addMemberButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(230, 110, 40, 30));
 
+        cancelNewProjectButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/res/icons/cancel.png"))); // NOI18N
         cancelNewProjectButton.setText("Cancelar");
+        cancelNewProjectButton.setToolTipText("");
         cancelNewProjectButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 cancelNewProjectButtonActionPerformed(evt);
@@ -361,7 +539,9 @@ public class GUI extends javax.swing.JFrame {
         });
         newProjectDialog.getContentPane().add(cancelNewProjectButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(190, 280, 120, 40));
 
+        confirmNewProjectButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/res/icons/confirm2.png"))); // NOI18N
         confirmNewProjectButton.setText("Confirmar");
+        confirmNewProjectButton.setToolTipText("");
         confirmNewProjectButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 confirmNewProjectButtonActionPerformed(evt);
@@ -380,8 +560,9 @@ public class GUI extends javax.swing.JFrame {
         newWorkPackageDialog.setTitle("Nuevo Paquete de Trabajo");
         newWorkPackageDialog.setAlwaysOnTop(true);
         newWorkPackageDialog.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
-        newWorkPackageDialog.setMinimumSize(new java.awt.Dimension(365, 236));
+        newWorkPackageDialog.setMinimumSize(new java.awt.Dimension(365, 240));
         newWorkPackageDialog.setModal(true);
+        newWorkPackageDialog.setPreferredSize(new java.awt.Dimension(310, 215));
         newWorkPackageDialog.setResizable(false);
         newWorkPackageDialog.getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
@@ -400,6 +581,7 @@ public class GUI extends javax.swing.JFrame {
         newWorkPackageDialog.getContentPane().add(jLabel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 30, -1, -1));
         newWorkPackageDialog.getContentPane().add(workPackageNameField, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 50, 260, 30));
 
+        cancelNewWorkPackageButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/res/icons/cancel.png"))); // NOI18N
         cancelNewWorkPackageButton.setText("Cancelar");
         cancelNewWorkPackageButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -408,18 +590,20 @@ public class GUI extends javax.swing.JFrame {
         });
         newWorkPackageDialog.getContentPane().add(cancelNewWorkPackageButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(190, 160, 120, 40));
 
+        confirmNewWorkPackageButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/res/icons/confirm2.png"))); // NOI18N
         confirmNewWorkPackageButton.setText("Confirmar");
+        confirmNewWorkPackageButton.setToolTipText("");
         confirmNewWorkPackageButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 confirmNewWorkPackageButtonActionPerformed(evt);
             }
         });
-        newWorkPackageDialog.getContentPane().add(confirmNewWorkPackageButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 160, 120, 40));
+        newWorkPackageDialog.getContentPane().add(confirmNewWorkPackageButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 160, -1, 40));
 
         newDeliverableDialog.setTitle("Nuevo Entregable");
         newDeliverableDialog.setAlwaysOnTop(true);
         newDeliverableDialog.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
-        newDeliverableDialog.setMinimumSize(new java.awt.Dimension(365, 390));
+        newDeliverableDialog.setMinimumSize(new java.awt.Dimension(365, 410));
         newDeliverableDialog.setModal(true);
         newDeliverableDialog.setResizable(false);
         newDeliverableDialog.getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -439,6 +623,7 @@ public class GUI extends javax.swing.JFrame {
         newDeliverableDialog.getContentPane().add(jLabel6, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 30, -1, -1));
         newDeliverableDialog.getContentPane().add(deliverableNameField, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 50, 260, 30));
 
+        cancelNewDeliverableButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/res/icons/cancel.png"))); // NOI18N
         cancelNewDeliverableButton.setText("Cancelar");
         cancelNewDeliverableButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -447,6 +632,7 @@ public class GUI extends javax.swing.JFrame {
         });
         newDeliverableDialog.getContentPane().add(cancelNewDeliverableButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(190, 320, 120, 40));
 
+        confirmNewDeliverableButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/res/icons/confirm2.png"))); // NOI18N
         confirmNewDeliverableButton.setText("Confirmar");
         confirmNewDeliverableButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -470,7 +656,8 @@ public class GUI extends javax.swing.JFrame {
         header.setPreferredSize(new java.awt.Dimension(1280, 80));
         header.setLayout(new javax.swing.BoxLayout(header, javax.swing.BoxLayout.LINE_AXIS));
 
-        newProjectButton.setText("Nuevo Proyecto");
+        newProjectButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/res/icons/projectBig.png"))); // NOI18N
+        newProjectButton.setToolTipText("Crear Proyecto");
         newProjectButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 newProjectButtonActionPerformed(evt);
@@ -478,23 +665,8 @@ public class GUI extends javax.swing.JFrame {
         });
         header.add(newProjectButton);
 
-        wbsButton.setText("EDT");
-        wbsButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                wbsButtonActionPerformed(evt);
-            }
-        });
-        header.add(wbsButton);
-
-        scheduleButton.setText("Cronograma");
-        scheduleButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                scheduleButtonActionPerformed(evt);
-            }
-        });
-        header.add(scheduleButton);
-
-        addWorkPackage.setText("Nuevo Paquete de trabajo");
+        addWorkPackage.setIcon(new javax.swing.ImageIcon(getClass().getResource("/res/icons/folderBig.png"))); // NOI18N
+        addWorkPackage.setToolTipText("Nuevo Paquete de trabajo");
         addWorkPackage.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 addWorkPackageActionPerformed(evt);
@@ -502,8 +674,8 @@ public class GUI extends javax.swing.JFrame {
         });
         header.add(addWorkPackage);
 
-        addDeliverable.setText("Nuevo Entregable");
-        addDeliverable.setToolTipText("");
+        addDeliverable.setIcon(new javax.swing.ImageIcon(getClass().getResource("/res/icons/fileBig.png"))); // NOI18N
+        addDeliverable.setToolTipText("Nuevo Entregable");
         addDeliverable.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 addDeliverableActionPerformed(evt);
@@ -511,8 +683,35 @@ public class GUI extends javax.swing.JFrame {
         });
         header.add(addDeliverable);
 
-        addDeliverable1.setText("Reportes");
-        addDeliverable1.setToolTipText("");
+        wbsButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/res/icons/wbs.png"))); // NOI18N
+        wbsButton.setToolTipText("Ver EDT");
+        wbsButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                wbsButtonActionPerformed(evt);
+            }
+        });
+        header.add(wbsButton);
+
+        scheduleButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/res/icons/schedule.png"))); // NOI18N
+        scheduleButton.setToolTipText("Cronograma");
+        scheduleButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                scheduleButtonActionPerformed(evt);
+            }
+        });
+        header.add(scheduleButton);
+
+        deleteButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/res/icons/delete.png"))); // NOI18N
+        deleteButton.setToolTipText("Eliminar Nodo");
+        deleteButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                deleteButtonActionPerformed(evt);
+            }
+        });
+        header.add(deleteButton);
+
+        addDeliverable1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/res/icons/reports.png"))); // NOI18N
+        addDeliverable1.setToolTipText("Reportes");
         addDeliverable1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 addDeliverable1ActionPerformed(evt);
@@ -542,15 +741,50 @@ public class GUI extends javax.swing.JFrame {
         nodeDataPanel.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
         nodeDataPanel.setLayout(new java.awt.CardLayout());
 
+        reportsPanel.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        reportsConsole.setColumns(20);
+        reportsConsole.setRows(5);
+        jScrollPane9.setViewportView(reportsConsole);
+
+        reportsPanel.add(jScrollPane9, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 80, 210, 210));
+
+        confirmShowReport.setIcon(new javax.swing.ImageIcon(getClass().getResource("/res/icons/confirm.png"))); // NOI18N
+        confirmShowReport.setToolTipText("Mostrar Reporte");
+        confirmShowReport.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                confirmShowReportActionPerformed(evt);
+            }
+        });
+        reportsPanel.add(confirmShowReport, new org.netbeans.lib.awtextra.AbsoluteConstraints(190, 40, 40, 40));
+
+        chooseReport.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Preorden", "Inorden", "Postorden", "Nodos Terminales", "Nodos con 1 solo entregable" }));
+        chooseReport.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                chooseReportActionPerformed(evt);
+            }
+        });
+        reportsPanel.add(chooseReport, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 40, 170, 40));
+
+        heightLabel.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        heightLabel.setText("Altura:");
+        reportsPanel.add(heightLabel, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 300, 210, -1));
+
+        jLabel19.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        jLabel19.setText("Reportes");
+        reportsPanel.add(jLabel19, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 10, -1, -1));
+
+        nodeDataPanel.add(reportsPanel, "reports");
+
         javax.swing.GroupLayout noProjectPanelLayout = new javax.swing.GroupLayout(noProjectPanel);
         noProjectPanel.setLayout(noProjectPanelLayout);
         noProjectPanelLayout.setHorizontalGroup(
             noProjectPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 250, Short.MAX_VALUE)
+            .addGap(0, 310, Short.MAX_VALUE)
         );
         noProjectPanelLayout.setVerticalGroup(
             noProjectPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 289, Short.MAX_VALUE)
+            .addGap(0, 340, Short.MAX_VALUE)
         );
 
         nodeDataPanel.add(noProjectPanel, "none");
@@ -650,21 +884,17 @@ public class GUI extends javax.swing.JFrame {
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 254, Short.MAX_VALUE)
-            .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(jPanel1Layout.createSequentialGroup()
-                    .addGap(0, 0, Short.MAX_VALUE)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGap(0, 0, Short.MAX_VALUE)))
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(0, 0, Short.MAX_VALUE)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 293, Short.MAX_VALUE)
-            .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(jPanel1Layout.createSequentialGroup()
-                    .addGap(0, 0, Short.MAX_VALUE)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGap(0, 0, Short.MAX_VALUE)))
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(0, 0, Short.MAX_VALUE)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, Short.MAX_VALUE))
         );
 
         sidebar.add(jPanel1);
@@ -798,37 +1028,7 @@ public class GUI extends javax.swing.JFrame {
         if (selected == null)
             return;
         
-        String tabname = "EDT " + selected.getProjectName();
-        
-        if (this.tabs.contains(tabname))
-            return;
-        
-        WBSAnimationPanel tab =  new WBSAnimationPanel(this.getProject(selected.getProjectName()));
-        GUI gui = this;
-        
-        tab.addSecondaryMouseListener(new MouseAdapter() {
-            public void mouseClicked(MouseEvent e) {
-                WBSDrawableNode source = (WBSDrawableNode) e.getSource();
-                WBSNode node = source.get();
-                
-                if (node == null)
-                    return;
-                
-                tree.setSelected(null);
-                
-                if (node instanceof Deliverable)
-                    gui.setDeliverableData(node.getName(), ((Deliverable) node).getDescription(), node.getPath());
-                else if (node.isProject())
-                    gui.setProjectData(node.getName());
-                else
-                    gui.setWorkPackageData(node.getName(), node.getPath());
-            }
-        });
-        
-        this.mainContentTabPane.addTab(tabname, tab);
-        this.tabs.add(tabname);
-        this.wbsPanels.add(tab);
-        this.updateUI();
+        this.addWbsTab(selected);
     }//GEN-LAST:event_wbsButtonActionPerformed
 
     private void scheduleButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_scheduleButtonActionPerformed
@@ -837,18 +1037,69 @@ public class GUI extends javax.swing.JFrame {
         if (selected == null)
             return;
         
-        String tabname = "Cronograma " + selected.getProjectName();
-        
-        if (this.tabs.contains(tabname))
-            return;
-        
-        this.mainContentTabPane.addTab(tabname, new SchedulePanel());
-        this.tabs.add(tabname);
+        this.addScheduleTab(selected);
     }//GEN-LAST:event_scheduleButtonActionPerformed
 
     private void addDeliverable1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addDeliverable1ActionPerformed
-        // TODO add your handling code here:
+        this.cards.show(this.nodeDataPanel, "reports");
+        this.reportsConsole.setText("");
     }//GEN-LAST:event_addDeliverable1ActionPerformed
+
+    private void deleteButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteButtonActionPerformed
+        WBSNode selected = this.getSelectedNode("No se ha seleccionado ningún elemento, seleccione algún nodo en el árbol de la izquierda o en el EDT");
+        
+        if (selected == null)
+            return;
+        
+        int option = JOptionPane.showConfirmDialog(null, "Desea eliminar el nodo? Si este tiene hijos, estos también será eliminados", "Confirmar eliminar", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+     
+        if (option == 0) {
+            LinkedList<String> filePath = LinkedList.split(selected.getPath(), "/");
+        
+            if (filePath.length() > 1)
+                filePath.add("wbs", 1);
+
+            File file = FileHelpers.get(filePath.join("/"));
+            
+            if (file.isDirectory()) {
+                FileHelpers.clearDirectory(file);
+            }
+            
+            file.delete();
+            
+            this.projects = Project.load();
+            this.updateUI();
+        }
+    }//GEN-LAST:event_deleteButtonActionPerformed
+
+    private void confirmShowReportActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_confirmShowReportActionPerformed
+        WBSNode selected = getSelectedNode("Seleccione algún proyecto o nodo de un proyecto");
+        
+        if (selected == null) {
+            return;
+        }
+        
+        LinkedListNode<WBSAnimationPanel> panel = new LinkedListNode<>(null);
+
+        String projectName = selected.getProjectName();
+
+        this.wbsPanels.forEach(wbsPanel -> {
+            if (wbsPanel.getSelected() != null)
+                panel.set(wbsPanel);
+        });
+
+        if (panel.get() == null) {
+            this.addWbsTab(selected);
+            panel.set(this.wbsPanels.get(this.wbsPanels.length() - 1));
+        }
+        
+        this.mainContentTabPane.setSelectedComponent(panel.get());
+        this.resetTraversal(this.chooseReport.getSelectedIndex(), panel.get());
+    }//GEN-LAST:event_confirmShowReportActionPerformed
+
+    private void chooseReportActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_chooseReportActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_chooseReportActionPerformed
 
     /**
      * @param args the command line arguments
@@ -894,9 +1145,12 @@ public class GUI extends javax.swing.JFrame {
     private javax.swing.JButton cancelNewDeliverableButton;
     private javax.swing.JButton cancelNewProjectButton;
     private javax.swing.JButton cancelNewWorkPackageButton;
+    private javax.swing.JComboBox<String> chooseReport;
     private javax.swing.JButton confirmNewDeliverableButton;
     private javax.swing.JButton confirmNewProjectButton;
     private javax.swing.JButton confirmNewWorkPackageButton;
+    private javax.swing.JButton confirmShowReport;
+    private javax.swing.JButton deleteButton;
     private javax.swing.JPanel deliverableCard;
     private javax.swing.JTextArea deliverableDescrArea;
     private javax.swing.JTextArea deliverableDescriptionArea;
@@ -907,6 +1161,7 @@ public class GUI extends javax.swing.JFrame {
     private javax.swing.JLabel deliverableProjectLabel;
     private javax.swing.JPanel fileExplorerPanel;
     private javax.swing.JPanel header;
+    private javax.swing.JLabel heightLabel;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
@@ -915,6 +1170,7 @@ public class GUI extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel15;
     private javax.swing.JLabel jLabel16;
     private javax.swing.JLabel jLabel17;
+    private javax.swing.JLabel jLabel19;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
@@ -931,6 +1187,7 @@ public class GUI extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane6;
     private javax.swing.JScrollPane jScrollPane7;
     private javax.swing.JScrollPane jScrollPane8;
+    private javax.swing.JScrollPane jScrollPane9;
     private javax.swing.JTabbedPane mainContentTabPane;
     private javax.swing.JDialog newDeliverableDialog;
     private javax.swing.JButton newProjectButton;
@@ -946,6 +1203,8 @@ public class GUI extends javax.swing.JFrame {
     private javax.swing.JTextField projectNameField;
     private javax.swing.JLabel projectNameLabel;
     private javax.swing.JButton removeMemberButton;
+    private javax.swing.JTextArea reportsConsole;
+    private javax.swing.JPanel reportsPanel;
     private javax.swing.JLabel savePathLabel;
     private javax.swing.JButton scheduleButton;
     private javax.swing.JPanel sidebar;

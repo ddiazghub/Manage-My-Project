@@ -20,6 +20,7 @@ public class WBSDrawableNode extends javax.swing.JPanel {
     private WBSNode data;
     private boolean selected;
     private boolean expanded;
+    private boolean visited;
     private TreeNode<WBSDrawableNode> node;
     
     public WBSDrawableNode(WBSNode data, TreeNode<WBSDrawableNode> node, float x, float y) {
@@ -31,6 +32,7 @@ public class WBSDrawableNode extends javax.swing.JPanel {
         this.yPos = y;
         this.data = data;
         this.selected = false;
+        this.visited = false;
         this.setExpanded(true);
         this.node = node;
         
@@ -61,14 +63,18 @@ public class WBSDrawableNode extends javax.swing.JPanel {
     }
 
     public void setSelected(boolean selected) {
-        if (selected && !this.selected) {
+        if (selected) {
             this.setBackground(new Color(51,51,255));
             this.nameLabel.setBackground(new Color(51,51,255));
         }
         
-        if (!selected && this.selected) {
-            this.setBackground(null);
-            this.nameLabel.setBackground(null);
+        if (!selected) {
+            if (this.visited) {
+                this.setVisited(true);
+            } else {
+                this.setBackground(null);
+                this.nameLabel.setBackground(null);
+            }
         }
         
         this.selected = selected;
@@ -86,6 +92,28 @@ public class WBSDrawableNode extends javax.swing.JPanel {
         
         this.expanded = expanded;
     }
+    public boolean isVisited() {
+        return visited;
+    }
+
+    public void setVisited(boolean visited) {
+        if (visited) {
+            this.setBackground(new Color(255, 255, 0));
+            this.nameLabel.setBackground(new Color(255, 255, 0));
+        }
+        
+        if (!visited) {
+            if (this.selected) {
+                this.setSelected(true);
+            } else {
+                this.setBackground(null);
+                this.nameLabel.setBackground(null);
+            }
+        }
+        
+        this.visited = visited;
+    }
+    
 
     public float getXPos() {
         return xPos;
