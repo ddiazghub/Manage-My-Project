@@ -145,6 +145,12 @@ public class LinkedList<T> implements IQueue<T>, IStack<T> {
         this.remove(index);
     }
     
+    public void clear() {
+        this.head = null;
+        this.tail = null;
+        this.length = 0;
+    }
+    
     /**
      * Obtiene el elemento en la posición indicada como parámetro.
      * @param index La posición en la cual se va a buscar el elemento.
@@ -199,6 +205,10 @@ public class LinkedList<T> implements IQueue<T>, IStack<T> {
         return length;
     }
     
+    public LinkedList<T> copy() {
+        return this.map(element -> element);
+    }
+    
     public int indexOf(T element) {
         LinkedListNode<Integer> container = new LinkedListNode<>(-1);
         LinkedListNode<Integer> i = new LinkedListNode<>(0);
@@ -235,6 +245,31 @@ public class LinkedList<T> implements IQueue<T>, IStack<T> {
             function.action(node.get());
             node = node.getNext();
         }
+    }
+    
+    /**
+     * Ejecuta la función que se pasa como parámetro para cada uno de los elementos en la lista enlazada. Se debe usar de la siguiente manera:
+     * <br>
+     * <pre>
+     * {@code lista.forEach((elemento) -> {
+     *     // Aqui se escribe el cuerpo de la función. Ejemplo:
+     *     System.out.println(elemento);
+     * });
+     * }
+     * </pre>
+     * @param function La función a ejecutar para cada elemento de la lista.
+     */
+    public T where(IFunction1<T, Boolean> function) {
+        LinkedListNode<T> node = this.head;
+        
+        while (node != null) {
+            if (function.action(node.get()))
+                return node.get();
+            
+            node = node.getNext();
+        }
+        
+        return null;
     }
     
     public void swap(int index1, int index2) {

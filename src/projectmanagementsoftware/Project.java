@@ -7,6 +7,7 @@ package projectmanagementsoftware;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Date;
 import java.util.Scanner;
 import javax.swing.JOptionPane;
 import projectmanagementsoftware.linkedlist.LinkedList;
@@ -39,19 +40,24 @@ public class Project {
      */
     private Schedule schedule;
 
+    private Date start;
+    
     /**
      * Crea un nuevo proyecto con el nombre suministrado como parámetro.
      * @param name Nombre del proyecto
     */
-    private Project(String name, LinkedList<String> team) {
+    private Project(String name, LinkedList<String> team, Date start) {
         this.name = name;
         this.team = team;
-        this.schedule = new Schedule();
+        this.start = start;
+        this.wbs = WorkBreakdownStructure.load(this);
+        this.schedule = new Schedule(this);
         this.reload();
     }
     
     private void reload() {
         this.wbs = WorkBreakdownStructure.load(this);
+        this.schedule = new Schedule(this);
     }
 
     /**
@@ -60,6 +66,10 @@ public class Project {
      */
     public String getName() {
         return name;
+    }
+
+    public Date getStart() {
+        return start;
     }
 
     /**
@@ -94,19 +104,20 @@ public class Project {
         return schedule;
     }
     
-    public static void changeProps(String name, LinkedList<String> team) {
+    public static void changeProps(String name, LinkedList<String> team, Date start) {
         try {
             File projectProps = FileHelpers.get(name + "/project.txt");
+            
             try (FileWriter writer = new FileWriter(projectProps)) {
-                String buffer = "name=" + name + "\n" + "team=" + team.join(",");
+                String buffer = "name=" + name + "\n" + "start=" + start.getTime() + "\n" + "team=" + team.join(",") + "\n";
                 writer.write(buffer);
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
     
-    public static Project create(String name, LinkedList<String> team) {
+    public static Project create(String name, LinkedList<String> team, Date start) {
         File root = FileHelpers.get(name);
         
         if (root.exists())
@@ -120,12 +131,12 @@ public class Project {
             FileHelpers.get(name + "/EDT.txt").createNewFile();
             File projectProps = FileHelpers.get(name + "/project.txt");
             projectProps.createNewFile();
-            changeProps(name, team);
+            changeProps(name, team, start);
         } catch(IOException e) {
             e.printStackTrace();
         }
         
-        return new Project(name, team);
+        return new Project(name, team, start);
     }
     
     public static LinkedList<Project> load() {
@@ -142,16 +153,21 @@ public class Project {
                 try (Scanner reader = new Scanner(projectProps)) {
                     String name = child.getName();
                     LinkedList<String> team = new LinkedList<>();
-
+                    Date start = new Date();
+                    
                     while (reader.hasNextLine()) {
                         String[] line = reader.nextLine().split("=");
 
-                        if (line.length == 2 && line[0].equals("team")) {
-                            team = LinkedList.split(line[1], ",");
+                        if (line.length == 2) {
+                            if (line[0].equals("team"))
+                                team = LinkedList.split(line[1], ",");
+                            
+                            if (line[0].equals("start"))
+                                start = new Date(Long.parseLong(line[1]));
                         }
                     }
 
-                    projects.add(new Project(name, team));
+                    projects.add(new Project(name, team, start));
                 }
             }
         } catch (IOException e) {
