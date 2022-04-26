@@ -27,9 +27,10 @@ import projectmanagementsoftware.Project;
 import projectmanagementsoftware.gui.ProjectFileSystemTree;
 import projectmanagementsoftware.gui.ProjectFileSystemTreeNode;
 import projectmanagementsoftware.gui.SchedulePanel;
-import projectmanagementsoftware.gui.WBSAnimationPanel;
+import projectmanagementsoftware.gui.WBSPanel;
 import projectmanagementsoftware.gui.WBSDrawableNode;
 import projectmanagementsoftware.linkedlist.LinkedListNode;
+import projectmanagementsoftware.utils.DateHelpers;
 import projectmanagementsoftware.utils.FileHelpers;
 import projectmanagementsoftware.utils.Validators;
 import projectmanagementsoftware.wbs.Deliverable;
@@ -46,7 +47,7 @@ public class GUI extends javax.swing.JFrame {
     private ProjectFileSystemTree tree;
     private CardLayout cards;
     private LinkedList<String> tabs;
-    private LinkedList<WBSAnimationPanel> wbsPanels;
+    private LinkedList<WBSPanel> wbsPanels;
     private Thread activeTraversalThread;
     private LinkedList<SchedulePanel> schedules;
     private DefaultListModel<String> dependenciesModel;
@@ -106,7 +107,7 @@ public class GUI extends javax.swing.JFrame {
                 showHeight();
                 
                 if (node instanceof Deliverable)
-                    gui.setDeliverableData(node.getName(), ((Deliverable) node).getDescription(), node.getPath(), ((Deliverable) node).getDuration(), ((Deliverable) node).getCost(), ((Deliverable) node).getStart(), ((Deliverable) node).getDependencies());
+                    gui.setDeliverableData(node.getName(), ((Deliverable) node).getDescription(), node.getPath(), ((Deliverable) node).getDuration(), ((Deliverable) node).getCost(), ((Deliverable) node).getStart(), ((Deliverable) node).getDependencies(), ((Deliverable) node).getEnd());
                 else if (node.isProject())
                     gui.setProjectData(node.getName());
                 else
@@ -126,11 +127,15 @@ public class GUI extends javax.swing.JFrame {
             panel.reloadComponent();
         });
         
+        this.schedules.forEach(schedule -> {
+            schedule.reload();
+        });
+        
         showHeight();
     }
     
     private void focusWbsTab(WBSNode node) {
-        LinkedListNode<WBSAnimationPanel> wbsPanel = new LinkedListNode<>(null);
+        LinkedListNode<WBSPanel> wbsPanel = new LinkedListNode<>(null);
         
         this.wbsPanels.forEach(panel -> {
             if (panel.getProject().getName().equals(node.getProjectName()))
@@ -143,7 +148,7 @@ public class GUI extends javax.swing.JFrame {
         this.mainContentTabPane.setSelectedComponent(wbsPanel.get());
     }
     
-    private void resetTraversal(int algorithm, WBSAnimationPanel wbs) {
+    private void resetTraversal(int algorithm, WBSPanel wbs) {
         Thread newTraversal = new Thread() {
             public void run() {
                 reportsConsole.setText("");
@@ -200,7 +205,7 @@ public class GUI extends javax.swing.JFrame {
             return;
         }
         
-        WBSAnimationPanel tab =  new WBSAnimationPanel(this.getProject(node.getProjectName()));
+        WBSPanel tab =  new WBSPanel(this.getProject(node.getProjectName()));
         GUI gui = this;
         ProjectFileSystemTree treeComponent = this.tree;
         
@@ -221,7 +226,7 @@ public class GUI extends javax.swing.JFrame {
                 });
                 
                 if (node instanceof Deliverable)
-                    gui.setDeliverableData(node.getName(), ((Deliverable) node).getDescription(), node.getPath(), ((Deliverable) node).getDuration(), ((Deliverable) node).getCost(), ((Deliverable) node).getStart(), ((Deliverable) node).getDependencies());
+                    gui.setDeliverableData(node.getName(), ((Deliverable) node).getDescription(), node.getPath(), ((Deliverable) node).getDuration(), ((Deliverable) node).getCost(), ((Deliverable) node).getStart(), ((Deliverable) node).getDependencies(), ((Deliverable) node).getEnd());
                 else if (node.isProject())
                     gui.setProjectData(node.getName());
                 else
@@ -402,7 +407,7 @@ public class GUI extends javax.swing.JFrame {
         return selected.get();
     }
     
-    public void setDeliverableData(String name, String description, String path, int duration, double cost, Date start, LinkedList<String> dependencies) {
+    public void setDeliverableData(String name, String description, String path, int duration, double cost, Date start, LinkedList<String> dependencies, Date end) {
         this.cards.show(this.nodeDataPanel, "deliverable");
         this.deliverableNameLabel.setText(name);
         this.deliverableDescrArea.setText(description);
@@ -410,7 +415,7 @@ public class GUI extends javax.swing.JFrame {
         this.deliverableDurationLabel.setText(duration + " días");
         DecimalFormat format = new DecimalFormat("$###,###.###");
         SimpleDateFormat dateFormat = new SimpleDateFormat("EEE MMM dd yyyy");
-        this.deliverableStartDateLabel.setText(dateFormat.format(start));
+        this.deliverableStartDateLabel.setText(dateFormat.format(start) + " " + dateFormat.format(end));
         this.deliverableCostLabel.setText(format.format(cost));
         String projectName = LinkedList.split(path, "/").get(0);
         this.deliverableProjectLabel.setText(projectName);
@@ -419,7 +424,7 @@ public class GUI extends javax.swing.JFrame {
         
         dependencies.forEach(dependency -> {
             System.out.println(dependency);
-            this.dependenciesShowArea.setText(this.dependenciesShowArea.getText() + dependency);
+            this.dependenciesShowArea.setText(this.dependenciesShowArea.getText() + dependency + "\n");
         });
     }
     
@@ -1099,6 +1104,8 @@ public class GUI extends javax.swing.JFrame {
     private void confirmNewProjectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_confirmNewProjectButtonActionPerformed
         String projectName = this.projectNameField.getText();
         Date start = this.projectStartChooser.getDate();
+        long timestamp = start.getTime();
+        start = new Date(timestamp - timestamp % DateHelpers.MILLISECONDS_PER_DAY);
         
         if (!validateDefined(projectName) || !validateName(projectName) || !validateUnique(projectName, "/"))
             return;
@@ -1253,7 +1260,7 @@ public class GUI extends javax.swing.JFrame {
                 Project project = getProject(filePath.get(0));
                 
                 this.projects.remove(project);
-                LinkedListNode<WBSAnimationPanel> toRemove = new LinkedListNode<>(null);
+                LinkedListNode<WBSPanel> toRemove = new LinkedListNode<>(null);
                 
                 this.wbsPanels.forEach((p) -> {
                     if (p.getProject().getName().equals(project.getName())) {
@@ -1284,7 +1291,7 @@ public class GUI extends javax.swing.JFrame {
             return;
         }
         
-        LinkedListNode<WBSAnimationPanel> panel = new LinkedListNode<>(null);
+        LinkedListNode<WBSPanel> panel = new LinkedListNode<>(null);
 
         String projectName = selected.getProjectName();
 

@@ -20,6 +20,11 @@ public class Graph<T> {
         this.vertices = new LinkedList<>();
         this.referenceVertex = null;
     }
+
+    public LinkedList<GraphVertex<T>> getVertices() {
+        return vertices;
+    }
+    
     
     public GraphVertex<T> getVertex(int index) {
         return this.vertices.get(index);

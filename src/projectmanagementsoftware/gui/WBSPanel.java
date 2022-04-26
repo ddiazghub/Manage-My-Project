@@ -29,7 +29,7 @@ import projectmanagementsoftware.wbs.WorkPackage;
  *
  * @author david
  */
-public class WBSAnimationPanel extends javax.swing.JPanel {
+public class WBSPanel extends javax.swing.JPanel {
     private static int NODE_SEPARATION_X = 10;
     private static int NODE_SEPARATION_Y = 40;
     private static Dimension NODESIZE = new Dimension(154, 55);
@@ -47,7 +47,7 @@ public class WBSAnimationPanel extends javax.swing.JPanel {
     /**
      * Creates new form WBSAnimationPanel
      */
-    public WBSAnimationPanel(Project project) {
+    public WBSPanel(Project project) {
         initComponents();
         
         this.secondaryListener = null;
@@ -70,7 +70,7 @@ public class WBSAnimationPanel extends javax.swing.JPanel {
     private TreeNode<WBSDrawableNode> setInitialPositions(TreeNode<WBSNode> node, float x, float y) {
         TreeNode<WBSDrawableNode> newNode = new TreeNode<>(null);
         newNode.set(new WBSDrawableNode(node.get(), newNode, x, y));
-        final WBSAnimationPanel treeComponent = this;
+        final WBSPanel treeComponent = this;
         
         newNode.get().addMouseListener(new MouseAdapter() {
             @Override
@@ -107,7 +107,6 @@ public class WBSAnimationPanel extends javax.swing.JPanel {
     
     public void reloadComponent() {
         this.animationPanel.removeAll();
-        Dimension size = this.animationPanel.getPreferredSize();
         
         this.tree.preorder(node -> {
             int x = this.getXInPixels(node.getXPos());

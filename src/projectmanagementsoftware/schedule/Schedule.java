@@ -19,22 +19,32 @@ import projectmanagementsoftware.wbs.Deliverable;
  */
 public class Schedule extends Graph<Deliverable>{
     private LinkedList<GraphVertex<Deliverable>> referenceVertices;
+    private Date start;
+    private Date end;
     private Project project;
     
     public Schedule(Project project) {
         this.project = project;
+        this.start = new Date(Long.MAX_VALUE);
+        this.end = new Date(0);
         this.load();
     }
     
     public void load() {
+        this.clear();
+        
         LinkedList<GraphVertex<Deliverable>> deliverables = this.project
             .getWbs()
             .getDeliverables()
             .map(deliverable -> {
-            return new GraphVertex<>(deliverable);
-        });
+                return new GraphVertex<>(deliverable);
+            });
         
         this.referenceVertices = deliverables.copy();
+        
+        this.referenceVertices.forEach(vertex -> {
+            this.addVertex(vertex);
+        });
         
         deliverables.forEach(deliverable -> {
             LinkedList<String> dependenciesPaths = deliverable.get().getDependencies();
@@ -56,31 +66,56 @@ public class Schedule extends Graph<Deliverable>{
         this.referenceVertices.forEach(vertex -> {
             loadDatesRecursively(vertex, visited);
         });
+        
+        this.vertices = this.vertices.sort(deliverable -> {
+            return (int) (deliverable.get().getStart().getTime() / 1000);
+        });
     }
     
     private Date loadDatesRecursively(GraphVertex<Deliverable> current, LinkedList<GraphVertex> visited) {
         if (visited.contains(current))
-            return addDays(current.get().getStart(), current.get().getDuration());
+            return current.get().getEnd();
 
         visited.add(current);
         
-        if (current.getLinks().length() == 0)
-            return addDays(current.get().getStart(), current.get().getDuration());
-        
-        LinkedListNode<GraphVertex<Deliverable>> container = new LinkedListNode<>(null);
+        if (current.getLinks().length() == 0) {
+            Date start = current.get().getStart();
+            
+            if (start.before(this.start))
+                this.start = start;
+                
+            return current.get().getEnd();
+        }
         
         current.getLinks().forEach(link -> {
             Date dependencyEnd = loadDatesRecursively(link, visited);
-            
-            if (container.get() == null || dependencyEnd.after(current.get().getStart())) {
+
+            if (dependencyEnd.getTime() > current.get().getStart().getTime()) {
                 current.get().setStart(dependencyEnd);
             }
         });
         
-        return addDays(current.get().getStart(), current.get().getDuration());
+        Date end = current.get().getEnd();
+        
+        if (end.after(this.end))
+            this.end = end;
+        
+        return current.get().getEnd();
     };
-    
-    private Date addDays(Date date, int days) {
-        return new Date(date.getTime() + days * 1000 * 60 * 60 * 24);
+
+    public LinkedList<GraphVertex<Deliverable>> getReferenceVertices() {
+        return referenceVertices;
+    }
+
+    public Project getProject() {
+        return project;
+    }
+
+    public Date getStart() {
+        return start;
+    }
+
+    public Date getEnd() {
+        return end;
     }
 }

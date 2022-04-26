@@ -9,6 +9,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Date;
 import projectmanagementsoftware.linkedlist.LinkedList;
+import projectmanagementsoftware.utils.DateHelpers;
 import projectmanagementsoftware.utils.FileHelpers;
 
 /**
@@ -16,6 +17,8 @@ import projectmanagementsoftware.utils.FileHelpers;
  * @author david
  */
 public class Deliverable extends WBSNode {
+    
+    
     /**
      * Descripción del entregable.
      */
@@ -108,5 +111,7 @@ public class Deliverable extends WBSNode {
         this.start = start;
     }
     
-    
+    public Date getEnd() {
+        return DateHelpers.addDays(this.start, this.duration);
+    }
 }

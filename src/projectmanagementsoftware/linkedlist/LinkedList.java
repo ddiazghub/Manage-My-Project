@@ -327,6 +327,27 @@ public class LinkedList<T> implements IQueue<T>, IStack<T> {
         }
     }
 
+    public LinkedList sort(IFunction1<T, Integer> function) {
+        LinkedList<T> sorted = new LinkedList<>();
+        
+        while (sorted.length() < this.length) {
+            LinkedListNode<T> min = new LinkedListNode<>(null);
+            LinkedListNode<T> current = this.head;
+            
+            while(current != null) {
+                if (!sorted.contains(current.get()) && (min.get() == null || function.action(current.get()) < function.action(min.get()))) {
+                    min.set(current.get());
+                }
+                
+                current = current.getNext();
+            }
+            
+            sorted.add(min.get());
+        }
+        
+        return sorted;
+    }
+    
     @Override
     public String toString() {
         if (this.length == 0)

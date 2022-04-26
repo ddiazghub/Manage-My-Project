@@ -7,6 +7,7 @@ package projectmanagementsoftware.gui;
 import java.awt.Color;
 import java.awt.event.MouseListener;
 import projectmanagementsoftware.tree.TreeNode;
+import projectmanagementsoftware.utils.ColorHelpers;
 import projectmanagementsoftware.wbs.Deliverable;
 import projectmanagementsoftware.wbs.WBSNode;
 
@@ -22,6 +23,7 @@ public class WBSDrawableNode extends javax.swing.JPanel {
     private boolean expanded;
     private boolean visited;
     private TreeNode<WBSDrawableNode> node;
+    private Color color;
     
     public WBSDrawableNode(WBSNode data, TreeNode<WBSDrawableNode> node, float x, float y) {
         this.initComponents();
@@ -35,6 +37,9 @@ public class WBSDrawableNode extends javax.swing.JPanel {
         this.visited = false;
         this.setExpanded(true);
         this.node = node;
+        this.color = ColorHelpers.nextColor(0.5f, 0.95f);
+        this.setOpaque(true);
+        this.setBackground(color);
         
         if (data instanceof Deliverable) {
             this.remove(this.expandButton);
@@ -72,8 +77,8 @@ public class WBSDrawableNode extends javax.swing.JPanel {
             if (this.visited) {
                 this.setVisited(true);
             } else {
-                this.setBackground(null);
-                this.nameLabel.setBackground(null);
+                this.setBackground(this.color);
+                this.nameLabel.setBackground(this.color);
             }
         }
         
@@ -106,8 +111,8 @@ public class WBSDrawableNode extends javax.swing.JPanel {
             if (this.selected) {
                 this.setSelected(true);
             } else {
-                this.setBackground(null);
-                this.nameLabel.setBackground(null);
+                this.setBackground(this.color);
+                this.nameLabel.setBackground(this.color);
             }
         }
         
