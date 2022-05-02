@@ -10,6 +10,7 @@ import projectmanagementsoftware.graph.Graph;
 import projectmanagementsoftware.graph.GraphVertex;
 import projectmanagementsoftware.linkedlist.LinkedList;
 import projectmanagementsoftware.linkedlist.LinkedListNode;
+import projectmanagementsoftware.utils.DateHelpers;
 import projectmanagementsoftware.utils.IVoidFunction1;
 import projectmanagementsoftware.wbs.Deliverable;
 
@@ -62,9 +63,18 @@ public class Schedule extends Graph<Deliverable>{
         });
         
         LinkedList<GraphVertex> visited = new LinkedList<>();
+        LinkedListNode<Date> projectEnd = new LinkedListNode<>(new Date(0));
         
         this.referenceVertices.forEach(vertex -> {
             loadDatesRecursively(vertex, visited);
+            Date currentEnd = vertex.get().getEnd();
+            
+            if (currentEnd.getTime() > projectEnd.get().getTime())
+                projectEnd.set(currentEnd);
+        });
+        
+        this.referenceVertices.forEach(vertex -> {
+            setDeadlinesRecursively(vertex, projectEnd.get());
         });
         
         this.vertices = this.vertices.sort(deliverable -> {
@@ -101,6 +111,19 @@ public class Schedule extends Graph<Deliverable>{
             this.end = end;
         
         return current.get().getEnd();
+    };
+    
+    private void setDeadlinesRecursively(GraphVertex<Deliverable> current, Date deadline) {
+        Date currentDeadline = current.get().getDeadline();
+        
+        if (currentDeadline == null || deadline.getTime() < currentDeadline.getTime())
+            current.get().setDeadline(deadline);
+        
+        Date newDeadline = DateHelpers.addDays(deadline, -current.get().getDuration());
+        
+        current.getLinks().forEach(link -> {
+            setDeadlinesRecursively(link, newDeadline);
+        });
     };
 
     public LinkedList<GraphVertex<Deliverable>> getReferenceVertices() {

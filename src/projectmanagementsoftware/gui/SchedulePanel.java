@@ -90,6 +90,10 @@ public class SchedulePanel extends javax.swing.JPanel {
     private void revalidateSchedule() {
         this.clear();
         Schedule schedule = this.project.getSchedule();
+        
+        if (schedule.getVertexCount() == 0)
+            return;
+        
         this.referenceVertices = schedule.getReferenceVertices();
         Date start = schedule.getStart();
         Date end = schedule.getEnd();

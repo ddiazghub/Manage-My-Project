@@ -27,6 +27,7 @@ public class Deliverable extends WBSNode {
     private int duration;
     private LinkedList<String> dependencies;
     private Date start;
+    private Date deadline;
     
     /**
      * Crea un nuevo entregable.
@@ -109,6 +110,14 @@ public class Deliverable extends WBSNode {
 
     public void setStart(Date start) {
         this.start = start;
+    }
+
+    public Date getDeadline() {
+        return deadline;
+    }
+
+    public void setDeadline(Date deadline) {
+        this.deadline = deadline;
     }
     
     public Date getEnd() {

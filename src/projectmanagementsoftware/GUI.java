@@ -24,6 +24,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import projectmanagementsoftware.linkedlist.LinkedList;
 import projectmanagementsoftware.Project;
+import projectmanagementsoftware.gui.BOMPanel;
 import projectmanagementsoftware.gui.ProjectFileSystemTree;
 import projectmanagementsoftware.gui.ProjectFileSystemTreeNode;
 import projectmanagementsoftware.gui.SchedulePanel;
@@ -36,6 +37,8 @@ import projectmanagementsoftware.utils.Validators;
 import projectmanagementsoftware.wbs.Deliverable;
 import projectmanagementsoftware.wbs.WBSNode;
 import projectmanagementsoftware.wbs.WorkPackage;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -50,7 +53,9 @@ public class GUI extends javax.swing.JFrame {
     private LinkedList<WBSPanel> wbsPanels;
     private Thread activeTraversalThread;
     private LinkedList<SchedulePanel> schedules;
+    private LinkedList<BOMPanel> bomPanels;
     private DefaultListModel<String> dependenciesModel;
+    private int lastSelectedTab;
     
     /**
      * Creates new form GUI
@@ -68,11 +73,12 @@ public class GUI extends javax.swing.JFrame {
         this.cards.show(this.nodeDataPanel, "none");
         this.wbsPanels = new LinkedList<>();
         this.schedules = new LinkedList<>();
-        this.savePathLabel.setText("Los archivos se guardan en: C:" + Paths.get(FileHelpers.BASEPATH));
+        this.bomPanels = new LinkedList<>();
+        this.setTitle("PMS. Ruta de guardado: C:" + Paths.get(FileHelpers.BASEPATH));
         this.activeTraversalThread = null;
         this.dependenciesModel = new DefaultListModel();
-        
         this.dependenciesList.setModel(this.dependenciesModel);
+        this.lastSelectedTab = 1;
         
         this.dependenciesList.setSelectionModel(new DefaultListSelectionModel() {
             @Override
@@ -102,12 +108,25 @@ public class GUI extends javax.swing.JFrame {
                     panel.setSelected(null);
                 });
                 
-                addWbsTab(node);
-                focusWbsTab(node);
+                switch (gui.lastSelectedTab) {
+                    case 1:
+                        addWbsTab(node);
+                        break;
+                    
+                    case 2:
+                        addScheduleTab(node);
+                        break;
+                        
+                    case 3:
+                        addBOMTab(node);
+                        break;
+                }
+                
+                focusTab(node);
                 showHeight();
                 
                 if (node instanceof Deliverable)
-                    gui.setDeliverableData(node.getName(), ((Deliverable) node).getDescription(), node.getPath(), ((Deliverable) node).getDuration(), ((Deliverable) node).getCost(), ((Deliverable) node).getStart(), ((Deliverable) node).getDependencies(), ((Deliverable) node).getEnd());
+                    gui.setDeliverableData(node.getName(), ((Deliverable) node).getDescription(), node.getPath(), ((Deliverable) node).getDuration(), ((Deliverable) node).getCost(), ((Deliverable) node).getStart(), ((Deliverable) node).getDependencies(), ((Deliverable) node).getEnd(), ((Deliverable) node).getDeadline());
                 else if (node.isProject())
                     gui.setProjectData(node.getName());
                 else
@@ -131,9 +150,28 @@ public class GUI extends javax.swing.JFrame {
             schedule.reload();
         });
         
+        this.bomPanels.forEach(bom -> {
+            bom.reload();
+        });
+        
         showHeight();
     }
     
+    private void focusTab(WBSNode node) {
+        switch (this.lastSelectedTab) {
+            case 1:
+                this.focusWbsTab(node);
+                break;
+                
+            case 2:
+                this.focusScheduleTab(node);
+                break;
+                
+            case 3:
+                this.focusBOMTab(node);
+                break;
+        }
+    }
     private void focusWbsTab(WBSNode node) {
         LinkedListNode<WBSPanel> wbsPanel = new LinkedListNode<>(null);
         
@@ -146,6 +184,7 @@ public class GUI extends javax.swing.JFrame {
             return;
         
         this.mainContentTabPane.setSelectedComponent(wbsPanel.get());
+        this.lastSelectedTab = 1;
     }
     
     private void resetTraversal(int algorithm, WBSPanel wbs) {
@@ -226,7 +265,7 @@ public class GUI extends javax.swing.JFrame {
                 });
                 
                 if (node instanceof Deliverable)
-                    gui.setDeliverableData(node.getName(), ((Deliverable) node).getDescription(), node.getPath(), ((Deliverable) node).getDuration(), ((Deliverable) node).getCost(), ((Deliverable) node).getStart(), ((Deliverable) node).getDependencies(), ((Deliverable) node).getEnd());
+                    gui.setDeliverableData(node.getName(), ((Deliverable) node).getDescription(), node.getPath(), ((Deliverable) node).getDuration(), ((Deliverable) node).getCost(), ((Deliverable) node).getStart(), ((Deliverable) node).getDependencies(), ((Deliverable) node).getEnd(), ((Deliverable) node).getDeadline());
                 else if (node.isProject())
                     gui.setProjectData(node.getName());
                 else
@@ -239,6 +278,7 @@ public class GUI extends javax.swing.JFrame {
         this.wbsPanels.add(tab);
         this.mainContentTabPane.setSelectedIndex(this.mainContentTabPane.getSelectedIndex() - 1);
         this.updateUI();
+        this.lastSelectedTab = 1;
     }
     
     public void focusScheduleTab(WBSNode node) {
@@ -253,6 +293,7 @@ public class GUI extends javax.swing.JFrame {
             return;
         
         this.mainContentTabPane.setSelectedComponent(s.get());
+        this.lastSelectedTab = 2;
     }
     
     public void addScheduleTab(WBSNode node) {
@@ -268,7 +309,41 @@ public class GUI extends javax.swing.JFrame {
         this.mainContentTabPane.addTab(tabname, schedule);
         this.tabs.add(tabname);
         this.mainContentTabPane.setSelectedIndex(this.mainContentTabPane.getComponentCount() - 1);
+        this.lastSelectedTab = 2;
     }
+    
+    public void focusBOMTab(WBSNode node) {
+        LinkedListNode<BOMPanel> s = new LinkedListNode<>(null);
+        
+        this.bomPanels.forEach(bom -> {
+            if (bom.getProject().getName().equals(node.getProjectName()))
+                s.set(bom);
+        });
+        
+        if (s.get() == null)
+            return;
+        
+        this.mainContentTabPane.setSelectedComponent(s.get());
+        this.lastSelectedTab = 3;
+    }
+    
+    public void addBOMTab(WBSNode node) {
+        String tabname = "Presupuesto " + node.getProjectName();
+        
+        if (this.tabs.contains(tabname)) {
+            this.focusBOMTab(node);
+            return;
+        }
+        
+        BOMPanel bom = new BOMPanel(getProject(node.getProjectName()));
+        this.bomPanels.add(bom);
+        this.mainContentTabPane.addTab(tabname, bom);
+        this.tabs.add(tabname);
+        this.mainContentTabPane.setSelectedIndex(this.mainContentTabPane.getComponentCount() - 1);
+        this.lastSelectedTab = 3;
+    }
+    
+    
     
     public void showCreateProjectDialog() {
         this.projectNameField.setText("");
@@ -407,7 +482,7 @@ public class GUI extends javax.swing.JFrame {
         return selected.get();
     }
     
-    public void setDeliverableData(String name, String description, String path, int duration, double cost, Date start, LinkedList<String> dependencies, Date end) {
+    public void setDeliverableData(String name, String description, String path, int duration, double cost, Date start, LinkedList<String> dependencies, Date end, Date deadline) {
         this.cards.show(this.nodeDataPanel, "deliverable");
         this.deliverableNameLabel.setText(name);
         this.deliverableDescrArea.setText(description);
@@ -419,6 +494,7 @@ public class GUI extends javax.swing.JFrame {
         this.deliverableCostLabel.setText(format.format(cost));
         String projectName = LinkedList.split(path, "/").get(0);
         this.deliverableProjectLabel.setText(projectName);
+        this.deadlineLabel.setText(dateFormat.format(deadline));
         
         this.dependenciesShowArea.setText("");
         
@@ -529,8 +605,7 @@ public class GUI extends javax.swing.JFrame {
         scheduleButton = new javax.swing.JButton();
         deleteButton = new javax.swing.JButton();
         addDeliverable1 = new javax.swing.JButton();
-        jPanel2 = new javax.swing.JPanel();
-        savePathLabel = new javax.swing.JLabel();
+        bomButton = new javax.swing.JButton();
         panel1 = new javax.swing.JPanel();
         sidebar = new javax.swing.JPanel();
         fileExplorerPanel = new javax.swing.JPanel();
@@ -566,14 +641,8 @@ public class GUI extends javax.swing.JFrame {
         jPanel4 = new javax.swing.JPanel();
         jLabel7 = new javax.swing.JLabel();
         deliverableNameLabel = new javax.swing.JLabel();
-        jLabel9 = new javax.swing.JLabel();
-        jScrollPane2 = new javax.swing.JScrollPane();
-        deliverableDescrArea = new javax.swing.JTextArea();
         jLabel10 = new javax.swing.JLabel();
         deliverableProjectLabel = new javax.swing.JLabel();
-        jLabel11 = new javax.swing.JLabel();
-        jScrollPane8 = new javax.swing.JScrollPane();
-        deliverablePathArea = new javax.swing.JTextArea();
         jLabel22 = new javax.swing.JLabel();
         deliverableStartDateLabel = new javax.swing.JLabel();
         deliverableDurationLabel = new javax.swing.JLabel();
@@ -583,6 +652,19 @@ public class GUI extends javax.swing.JFrame {
         jLabel27 = new javax.swing.JLabel();
         jScrollPane11 = new javax.swing.JScrollPane();
         dependenciesShowArea = new javax.swing.JTextArea();
+        jLabel28 = new javax.swing.JLabel();
+        deadlineLabel = new javax.swing.JLabel();
+        jButton2 = new javax.swing.JButton();
+        deliverableCard2 = new javax.swing.JPanel();
+        jScrollPane12 = new javax.swing.JScrollPane();
+        jPanel5 = new javax.swing.JPanel();
+        jLabel29 = new javax.swing.JLabel();
+        jScrollPane13 = new javax.swing.JScrollPane();
+        deliverableDescrArea = new javax.swing.JTextArea();
+        jLabel31 = new javax.swing.JLabel();
+        jScrollPane14 = new javax.swing.JScrollPane();
+        deliverablePathArea = new javax.swing.JTextArea();
+        jButton1 = new javax.swing.JButton();
         panel2 = new javax.swing.JPanel();
         mainContentTabPane = new javax.swing.JTabbedPane();
 
@@ -591,7 +673,6 @@ public class GUI extends javax.swing.JFrame {
         newProjectDialog.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
         newProjectDialog.setMinimumSize(new java.awt.Dimension(365, 424));
         newProjectDialog.setModal(true);
-        newProjectDialog.setPreferredSize(new java.awt.Dimension(365, 424));
         newProjectDialog.setResizable(false);
         newProjectDialog.getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
@@ -700,7 +781,6 @@ public class GUI extends javax.swing.JFrame {
         newDeliverableDialog.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
         newDeliverableDialog.setMinimumSize(new java.awt.Dimension(670, 380));
         newDeliverableDialog.setModal(true);
-        newDeliverableDialog.setPreferredSize(new java.awt.Dimension(670, 380));
         newDeliverableDialog.getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
         deliverableParentField.setEditable(false);
@@ -772,6 +852,8 @@ public class GUI extends javax.swing.JFrame {
         header.setPreferredSize(new java.awt.Dimension(1280, 80));
         header.setLayout(new java.awt.GridLayout(1, 0, 10, 0));
 
+        jPanel3.setMaximumSize(new java.awt.Dimension(628, 66));
+        jPanel3.setPreferredSize(new java.awt.Dimension(628, 66));
         jPanel3.setLayout(new javax.swing.BoxLayout(jPanel3, javax.swing.BoxLayout.LINE_AXIS));
 
         newProjectButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/res/icons/projectBig.png"))); // NOI18N
@@ -837,14 +919,16 @@ public class GUI extends javax.swing.JFrame {
         });
         jPanel3.add(addDeliverable1);
 
+        bomButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/res/icons/budget.png"))); // NOI18N
+        bomButton.setToolTipText("Presupuesto");
+        bomButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                bomButtonActionPerformed(evt);
+            }
+        });
+        jPanel3.add(bomButton);
+
         header.add(jPanel3);
-
-        jPanel2.setLayout(new java.awt.BorderLayout());
-
-        savePathLabel.setText("jLabel14");
-        jPanel2.add(savePathLabel, java.awt.BorderLayout.CENTER);
-
-        header.add(jPanel2);
 
         getContentPane().add(header, java.awt.BorderLayout.NORTH);
 
@@ -990,34 +1074,12 @@ public class GUI extends javax.swing.JFrame {
         deliverableNameLabel.setText("j");
         jPanel4.add(deliverableNameLabel, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 30, 100, -1));
 
-        jLabel9.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
-        jLabel9.setText("Descripción:");
-        jPanel4.add(jLabel9, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 280, -1, -1));
-
-        deliverableDescrArea.setColumns(20);
-        deliverableDescrArea.setRows(5);
-        deliverableDescrArea.setFocusable(false);
-        jScrollPane2.setViewportView(deliverableDescrArea);
-
-        jPanel4.add(jScrollPane2, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 300, 210, 50));
-
         jLabel10.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         jLabel10.setText("Proyecto:");
-        jPanel4.add(jLabel10, new org.netbeans.lib.awtextra.AbsoluteConstraints(130, 10, -1, -1));
+        jPanel4.add(jLabel10, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 10, -1, -1));
 
         deliverableProjectLabel.setText("j");
-        jPanel4.add(deliverableProjectLabel, new org.netbeans.lib.awtextra.AbsoluteConstraints(130, 30, 120, -1));
-
-        jLabel11.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
-        jLabel11.setText("Ruta:");
-        jPanel4.add(jLabel11, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 220, -1, -1));
-
-        deliverablePathArea.setColumns(20);
-        deliverablePathArea.setRows(5);
-        deliverablePathArea.setFocusable(false);
-        jScrollPane8.setViewportView(deliverablePathArea);
-
-        jPanel4.add(jScrollPane8, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 240, 210, 40));
+        jPanel4.add(deliverableProjectLabel, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 30, 110, -1));
 
         jLabel22.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         jLabel22.setText("Fecha de inicio");
@@ -1042,20 +1104,81 @@ public class GUI extends javax.swing.JFrame {
 
         jLabel27.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         jLabel27.setText("Predecesoras:");
-        jPanel4.add(jLabel27, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 130, -1, -1));
+        jPanel4.add(jLabel27, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 170, -1, -1));
 
         dependenciesShowArea.setColumns(20);
         dependenciesShowArea.setRows(5);
         dependenciesShowArea.setFocusable(false);
         jScrollPane11.setViewportView(dependenciesShowArea);
 
-        jPanel4.add(jScrollPane11, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 150, 210, 70));
+        jPanel4.add(jScrollPane11, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 190, 220, 90));
+
+        jLabel28.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        jLabel28.setText("Deadline");
+        jPanel4.add(jLabel28, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 130, -1, -1));
+
+        deadlineLabel.setText("j");
+        jPanel4.add(deadlineLabel, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 150, 210, -1));
+
+        jButton2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/res/icons/go.png"))); // NOI18N
+        jButton2.setToolTipText("Siguiente");
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton2ActionPerformed(evt);
+            }
+        });
+        jPanel4.add(jButton2, new org.netbeans.lib.awtextra.AbsoluteConstraints(150, 280, -1, -1));
 
         jScrollPane4.setViewportView(jPanel4);
 
         deliverableCard.add(jScrollPane4);
 
         nodeDataPanel.add(deliverableCard, "deliverable");
+
+        deliverableCard2.setPreferredSize(new java.awt.Dimension(262, 500));
+        deliverableCard2.setLayout(new javax.swing.BoxLayout(deliverableCard2, javax.swing.BoxLayout.LINE_AXIS));
+
+        jScrollPane12.setVerticalScrollBarPolicy(javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+
+        jPanel5.setPreferredSize(new java.awt.Dimension(250, 432));
+        jPanel5.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        jLabel29.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        jLabel29.setText("Descripción:");
+        jPanel5.add(jLabel29, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 130, -1, -1));
+
+        deliverableDescrArea.setColumns(20);
+        deliverableDescrArea.setRows(5);
+        deliverableDescrArea.setFocusable(false);
+        jScrollPane13.setViewportView(deliverableDescrArea);
+
+        jPanel5.add(jScrollPane13, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 150, 210, 100));
+
+        jLabel31.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        jLabel31.setText("Ruta:");
+        jPanel5.add(jLabel31, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 30, -1, -1));
+
+        deliverablePathArea.setColumns(20);
+        deliverablePathArea.setRows(5);
+        deliverablePathArea.setFocusable(false);
+        jScrollPane14.setViewportView(deliverablePathArea);
+
+        jPanel5.add(jScrollPane14, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 50, 210, 60));
+
+        jButton1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/res/icons/return.png"))); // NOI18N
+        jButton1.setToolTipText("Retornar");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
+        jPanel5.add(jButton1, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 280, -1, -1));
+
+        jScrollPane12.setViewportView(jPanel5);
+
+        deliverableCard2.add(jScrollPane12);
+
+        nodeDataPanel.add(deliverableCard2, "deliverable2");
 
         jScrollPane1.setViewportView(nodeDataPanel);
 
@@ -1261,6 +1384,14 @@ public class GUI extends javax.swing.JFrame {
                 
                 this.projects.remove(project);
                 LinkedListNode<WBSPanel> toRemove = new LinkedListNode<>(null);
+                LinkedListNode<SchedulePanel> toRemove2 = new LinkedListNode<>(null);
+                LinkedListNode<BOMPanel> toRemove3 = new LinkedListNode<>(null);
+                Pattern pattern = Pattern.compile(project.getName(), Pattern.CASE_INSENSITIVE);
+                
+                this.tabs.forEach(tab -> {
+                    if (pattern.matcher(tab).matches())
+                        this.tabs.remove(tab);
+                });
                 
                 this.wbsPanels.forEach((p) -> {
                     if (p.getProject().getName().equals(project.getName())) {
@@ -1268,10 +1399,30 @@ public class GUI extends javax.swing.JFrame {
                     }
                 });
                 
+                this.schedules.forEach((p) -> {
+                    if (p.getProject().getName().equals(project.getName())) {
+                        toRemove2.set(p);
+                    }
+                });
+                
+                this.bomPanels.forEach((p) -> {
+                    if (p.getProject().getName().equals(project.getName())) {
+                        toRemove3.set(p);
+                    }
+                });
+                
                 if (toRemove.get() != null)
                     this.mainContentTabPane.remove(toRemove.get());
                 
+                if (toRemove2.get() != null)
+                    this.mainContentTabPane.remove(toRemove2.get());
+                
+                if (toRemove3.get() != null)
+                    this.mainContentTabPane.remove(toRemove3.get());
+                
                 this.wbsPanels.remove(toRemove.get());
+                this.schedules.remove(toRemove2.get());
+                this.bomPanels.remove(toRemove3.get());
             }
             
             this.projects = Project.load();
@@ -1312,6 +1463,23 @@ public class GUI extends javax.swing.JFrame {
     private void chooseReportActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_chooseReportActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_chooseReportActionPerformed
+
+    private void bomButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bomButtonActionPerformed
+        WBSNode selected = this.getSelectedNode("Selecciona un elemento que pertenezca a un proyecto en el árbol de la izquierda para ver su Presupuesto");
+        
+        if (selected == null)
+            return;
+        
+        this.addBOMTab(selected);
+    }//GEN-LAST:event_bomButtonActionPerformed
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+        this.cards.show(this.nodeDataPanel, "deliverable");
+    }//GEN-LAST:event_jButton1ActionPerformed
+
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+        this.cards.show(this.nodeDataPanel, "deliverable2");
+    }//GEN-LAST:event_jButton2ActionPerformed
 
     /**
      * @param args the command line arguments
@@ -1354,6 +1522,7 @@ public class GUI extends javax.swing.JFrame {
     private javax.swing.JButton addMemberButton;
     private javax.swing.JTextField addMemberField;
     private javax.swing.JButton addWorkPackage;
+    private javax.swing.JButton bomButton;
     private javax.swing.JButton cancelNewDeliverableButton;
     private javax.swing.JButton cancelNewProjectButton;
     private javax.swing.JButton cancelNewWorkPackageButton;
@@ -1363,8 +1532,10 @@ public class GUI extends javax.swing.JFrame {
     private javax.swing.JButton confirmNewWorkPackageButton;
     private javax.swing.JButton confirmShowReport;
     private javax.swing.JSpinner costSpinner;
+    private javax.swing.JLabel deadlineLabel;
     private javax.swing.JButton deleteButton;
     private javax.swing.JPanel deliverableCard;
+    private javax.swing.JPanel deliverableCard2;
     private javax.swing.JLabel deliverableCostLabel;
     private javax.swing.JTextArea deliverableDescrArea;
     private javax.swing.JTextArea deliverableDescriptionArea;
@@ -1381,9 +1552,10 @@ public class GUI extends javax.swing.JFrame {
     private javax.swing.JPanel fileExplorerPanel;
     private javax.swing.JPanel header;
     private javax.swing.JLabel heightLabel;
+    private javax.swing.JButton jButton1;
+    private javax.swing.JButton jButton2;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
-    private javax.swing.JLabel jLabel11;
     private javax.swing.JLabel jLabel12;
     private javax.swing.JLabel jLabel13;
     private javax.swing.JLabel jLabel14;
@@ -1401,27 +1573,30 @@ public class GUI extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel25;
     private javax.swing.JLabel jLabel26;
     private javax.swing.JLabel jLabel27;
+    private javax.swing.JLabel jLabel28;
+    private javax.swing.JLabel jLabel29;
     private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel31;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
-    private javax.swing.JLabel jLabel9;
     private javax.swing.JPanel jPanel1;
-    private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
+    private javax.swing.JPanel jPanel5;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane10;
     private javax.swing.JScrollPane jScrollPane11;
-    private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JScrollPane jScrollPane12;
+    private javax.swing.JScrollPane jScrollPane13;
+    private javax.swing.JScrollPane jScrollPane14;
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JScrollPane jScrollPane5;
     private javax.swing.JScrollPane jScrollPane6;
     private javax.swing.JScrollPane jScrollPane7;
-    private javax.swing.JScrollPane jScrollPane8;
     private javax.swing.JScrollPane jScrollPane9;
     private javax.swing.JTabbedPane mainContentTabPane;
     private javax.swing.JDialog newDeliverableDialog;
@@ -1442,7 +1617,6 @@ public class GUI extends javax.swing.JFrame {
     private javax.swing.JButton removeMemberButton;
     private javax.swing.JTextArea reportsConsole;
     private javax.swing.JPanel reportsPanel;
-    private javax.swing.JLabel savePathLabel;
     private javax.swing.JButton scheduleButton;
     private javax.swing.JPanel sidebar;
     private javax.swing.JButton wbsButton;
